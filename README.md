@@ -270,6 +270,19 @@ both the Rust extension and pure Python pysrt, reporting:
 Results are written to stdout and include Python version, platform, and Rust build profile
 so confounders are fully documented.
 
+### Latest Release Build Results (`python bench/run_bench.py`)
+
+```
+====================================================================
+Operation              | Python (pysrt)  | Rust (pysrt-rs) | Speedup   
+--------------------------------------------------------------------
+Parse (1000 subs)      |       7.08 ms |       0.41 ms |    17.2x
+Parse (Movie - 1332)   |       9.73 ms |       0.69 ms |    14.1x
+Shift (1000 subs)      |       2.27 ms |       0.46 ms |     5.0x
+Serialize (text)       |       0.15 ms |       0.04 ms |     3.4x
+====================================================================
+```
+
 ---
 
 ## License
