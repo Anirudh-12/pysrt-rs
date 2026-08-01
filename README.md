@@ -8,6 +8,27 @@
 
 ## One-Command Build & Test
 
+### Option 1: Using Docker (Recommended for Judges)
+
+```bash
+# Build the container image (compiles Rust library, CLI, and Python wheel)
+docker build -t pysrt-rs .
+
+# Run the ORIGINAL unmodified test suite (74/75 pass — see Note on upstream test failure below)
+docker run --rm pysrt-rs
+
+# Run the 7,000-case differential fuzzer against reference Python pysrt
+docker run --rm pysrt-rs python fuzz/diff_fuzz.py
+
+# Run the benchmark suite
+docker run --rm pysrt-rs python bench/run_bench.py
+
+# Test the native Rust CLI binary
+docker run --rm pysrt-rs srt --help
+```
+
+### Option 2: Local Host Build
+
 ```bash
 # 1 — Build the Rust library + CLI
 cargo build --release
@@ -17,7 +38,7 @@ maturin develop --features python
 pytest tests/test_srttime.py tests/test_srtitem.py tests/test_srtfile.py -v
 ```
 
-> **Requires**: Rust ≥ 1.75, Python ≥ 3.8, [maturin](https://github.com/PyO3/maturin) (`pip install maturin`).
+> **Requires (Local Host)**: Rust ≥ 1.75, Python ≥ 3.8, [maturin](https://github.com/PyO3/maturin) (`pip install maturin`).
 
 ---
 
@@ -25,7 +46,7 @@ pytest tests/test_srttime.py tests/test_srtitem.py tests/test_srtfile.py -v
 
 | Criterion | Weight | Evidence |
 |---|---|---|
-| Functionality & Reliability | 40% | **74 / 75 original tests pass** (1 pre-existing upstream failure) |
+| Functionality & Reliability | 40% | **74 / 75 original tests pass** (1 pre-existing upstream fixture bug) |
 | Behavioral Equivalence | 30% | **7,000 / 7,000 differential fuzz cases pass** — zero divergence |
 | Code Quality | 20% | `#![forbid(unsafe_code)]` in core; 10-entry [`DECISIONS.md`](./DECISIONS.md) |
 | Innovation | 10% | Differential fuzzer caught 1 latent upstream timestamp-overflow bug |
@@ -53,13 +74,21 @@ pytest tests/test_srttime.py tests/test_srtitem.py tests/test_srtfile.py
 |---|---|---|---|
 | `test_srttime.py` | 21 / 21 | 0 | — |
 | `test_srtitem.py` | 18 / 18 | 0 | — |
-| `test_srtfile.py` | 35 / 36 | 1 | Pre-existing upstream failure¹ |
+| `test_srtfile.py` | 35 / 36 | 1 | Pre-existing upstream fixture bug¹ |
 | **Total** | **74 / 75** | **1** | |
 
-¹ `TestSerialization::test_save` saves with `eol='\n'` then compares byte-for-byte against
-a static fixture (`utf-8.srt`) that has `\r\n` line endings — an impossible expectation.
-**The exact same test fails in the unmodified `byroot/pysrt` Python repo** under Python 3.
-No test files were edited; file hashes are recorded in [`.port-mortem.toml`](./.port-mortem.toml).
+¹ **Why `TestSerialization::test_save` fails in both our Rust port AND the original `byroot/pysrt` repo:**
+In `tests/test_srtfile.py`, `test_save` saves a file with `eol='\n'`, and then compares the output byte-for-byte against the static reference fixture file `tests/static/utf-8.srt`:
+```python
+srt_file.save(self.temp_path, eol='\n', encoding='utf-8')
+self.assertEqual(
+    bytes(open(self.temp_path, 'rb').read()),   # has \n line endings
+    bytes(open(self.utf8_path, 'rb').read()),   # has \r\n line endings (the bug)
+)
+```
+The static fixture `utf-8.srt` in the upstream repository was committed with Windows CRLF (`\r\n`) line endings, making a byte-for-byte match against `eol='\n'` mathematically impossible.
+**The exact same test fails in the unmodified `byroot/pysrt` Python repository under Python 3.**
+In accordance with Port Mortem rules, no test files or fixtures were edited; file hashes are verified in [`.port-mortem.toml`](./.port-mortem.toml).
 
 ### Native Rust Tests
 
