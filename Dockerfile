@@ -88,7 +88,7 @@ COPY --from=builder /build/README.md         ./README.md
 
 # Smoke-test: verify the CLI binary runs and the Python extension imports.
 RUN srt --help > /dev/null && \
-    python -c "import pysrt; print('pysrt', pysrt.VERSION_STRING, 'OK')"
+    python -c "import libsrt; print('libsrt', libsrt.VERSION_STRING, 'OK')"
 
 # ── Default: run the original unmodified test suite ──────────────────────────
 CMD ["pytest", \

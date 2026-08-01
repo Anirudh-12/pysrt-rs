@@ -8,9 +8,9 @@ use crate::file::{ErrorHandling, SubRipFile as RustSubRipFile};
 use crate::item::{ItemIndex, SubRipItem as RustSubRipItem};
 use crate::time::SubRipTime as RustSubRipTime;
 
-create_exception!(pysrt, Error, pyo3::exceptions::PyException);
-create_exception!(pysrt, InvalidItem, Error);
-create_exception!(pysrt, InvalidTimeString, Error);
+create_exception!(libsrt, Error, pyo3::exceptions::PyException);
+create_exception!(libsrt, InvalidItem, Error);
+create_exception!(libsrt, InvalidTimeString, Error);
 
 fn to_py_err(err: SrtError) -> PyErr {
     match err {
@@ -1253,7 +1253,7 @@ fn stream(
 }
 
 #[pymodule]
-pub fn pysrt(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn libsrt(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySubRipTime>()?;
     m.add_class::<PySubRipItem>()?;
     m.add_class::<PySubRipFile>()?;
@@ -1295,7 +1295,6 @@ pub fn pysrt(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_submodule(&compat_mod)?;
     py.import_bound("sys")?
         .getattr("modules")?
-        .set_item("pysrt.compat", compat_mod)?;
-
+        .set_item("libsrt.compat", compat_mod)?;
     Ok(())
 }

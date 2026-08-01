@@ -27,12 +27,11 @@ logging.basicConfig(
 log = logging.getLogger("diff_fuzz")
 
 # ---------------------------------------------------------------------------
-# Import Rust extension (installed by maturin develop --features python)
+# Import Rust extension (installed as 'libsrt' by maturin develop)
 # ---------------------------------------------------------------------------
-import pysrt as rust_pysrt
+import libsrt as rust_pysrt
 
-# Add reference_pysrt folder to sys.path for the pure-Python reference
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "reference_pysrt")))
+# Import normal pure-Python reference pysrt
 import pysrt as py_pysrt
 
 

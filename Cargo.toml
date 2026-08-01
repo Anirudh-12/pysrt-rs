@@ -8,7 +8,7 @@ repository = "https://github.com/Anirudh-12/pysrt-rs"
 license = "MIT"
 
 [lib]
-name = "pysrt"
+name = "libsrt"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]

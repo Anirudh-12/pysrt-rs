@@ -3,7 +3,7 @@ requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "pysrt"
+name = "libsrt"
 version = "0.1.0"
 description = "High performance Rust port of byroot/pysrt"
 authors = [{name = "Anirudh", email = "Anirudh-12@users.noreply.github.com"}]
@@ -11,4 +11,4 @@ requires-python = ">=3.8"
 
 [tool.maturin]
 features = ["python"]
-module-name = "pysrt"
+module-name = "libsrt"

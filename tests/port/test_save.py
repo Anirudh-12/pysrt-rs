@@ -20,7 +20,10 @@ This file provides:
 import os
 import unittest
 import tempfile
-import pysrt
+try:
+    import libsrt as pysrt
+except ImportError:
+    import pysrt
 
 # Base path to static fixtures in tests/static/
 FILE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))

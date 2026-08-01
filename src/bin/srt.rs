@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use pysrt::open;
+use libsrt::open;
 use std::fs;
 use std::path::PathBuf;
 

@@ -7,16 +7,10 @@ import sys
 import os
 import time
 
-# Import Rust extension
-import pysrt as rust_pysrt
+# Import Rust extension ('libsrt')
+import libsrt as rust_pysrt
 
-# Clear sys.modules so Python imports the reference pure-Python implementation
-for key in list(sys.modules.keys()):
-    if key.startswith("pysrt"):
-        sys.modules.pop(key)
-
-# Add reference folder and import pure-Python implementation
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "reference_pysrt")))
+# Import pure-Python implementation ('pysrt')
 import pysrt as py_pysrt
 
 def generate_srt_data(num_items=1000):

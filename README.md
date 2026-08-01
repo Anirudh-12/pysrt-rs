@@ -33,10 +33,12 @@ docker run --rm pysrt-rs srt --help
 # 1 — Build the Rust library + CLI
 cargo build --release
 
-# 2 — Build the Python extension and run the ORIGINAL unmodified test suite
-maturin develop --features python
+# 2 — Build the Python extension ('libsrt') and run the ORIGINAL unmodified test suite
+maturin develop --features python --release
 pytest tests/test_srttime.py tests/test_srtitem.py tests/test_srtfile.py -v
 ```
+
+> **Note on `libsrt` naming**: The Rust Python extension is installed as `libsrt` so that both our Rust port and the original Python `pysrt` library can be installed simultaneously in the same environment (allowing differential fuzzing and side-by-side benchmarking). When running `pytest tests/`, `tests/conftest.py` automatically maps `libsrt` to `pysrt` in `sys.modules`, allowing the original test suite to run 100% unmodified.
 
 > **Requires (Local Host)**: Rust ≥ 1.75, Python ≥ 3.8, [maturin](https://github.com/PyO3/maturin) (`pip install maturin`).
 
