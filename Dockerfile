@@ -26,14 +26,6 @@
 # ghcr.io/pyo3/maturin ships Rust + maturin on a manylinux base.
 FROM ghcr.io/pyo3/maturin:latest AS builder
 
-# Create a virtual-environment so the wheel install is isolated.
-ENV VENV=/opt/venv
-RUN python3 -m venv "$VENV"
-ENV PATH="$VENV/bin:$PATH"
-
-# Install pytest + test helpers
-RUN pip install --no-cache-dir pytest
-
 WORKDIR /build
 
 # ── Copy manifests first (maximises Docker layer-cache reuse) ───────────────
@@ -65,11 +57,8 @@ RUN cargo build --release
 # ── 1b: Native Rust unit tests ───────────────────────────────────────────────
 RUN cargo test --all-targets
 
-# ── 1c: Build Python wheel via maturin ───────────────────────────────────────
-RUN maturin build --features python --release --out /wheels
-
-# ── 1d: Install wheel into the venv ──────────────────────────────────────────
-RUN pip install --no-cache-dir /wheels/*.whl
+# ── 1c: Build Python wheel via maturin for Python 3.12 ───────────────────────
+RUN maturin build --features python --release --out /wheels -i 3.12
 
 
 # ── Stage 2: runtime ────────────────────────────────────────────────────────
@@ -79,13 +68,11 @@ LABEL org.opencontainers.image.title="pysrt-rs" \
       org.opencontainers.image.description="Port Mortem 2026 Track D — memory-safe Rust port of byroot/pysrt" \
       org.opencontainers.image.licenses="MIT"
 
-ENV VENV=/opt/venv
-ENV PATH="$VENV/bin:$PATH"
-
 WORKDIR /app
 
-# Copy the fully-built venv (Python extension + pytest + deps)
-COPY --from=builder /opt/venv                /opt/venv
+# Install pytest and the compiled pysrt wheel into Python 3.12
+COPY --from=builder /wheels /wheels
+RUN pip install --no-cache-dir pytest /wheels/*.whl && rm -rf /wheels
 
 # Copy the native CLI binary
 COPY --from=builder /build/target/release/srt /usr/local/bin/srt
