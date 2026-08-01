@@ -1,0 +1,8 @@
+[package]
+name = "pysrt-fuzz"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pysrt = { package = "pysrt-rs", path = ".." }
+proptest = "1.4"

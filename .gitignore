@@ -1,0 +1,19 @@
+/target/
+fuzz/target/
+**/*.rs.bk
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/
+*.pyd
+*.so
+*.pdb
+.venv/
+Cargo.lock
+# Generated test output
+tests/static/temp.srt
+tests/tests/static/temp.srt
+tests/original/static/temp.srt
+reference_pysrt/tests/static/temp.srt
+# Compiled Python extension
+*.cp*.pyd

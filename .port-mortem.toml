@@ -1,0 +1,11 @@
+[project]
+name = "pysrt-rs"
+track = "D"
+source_repo = "https://github.com/byroot/pysrt"
+target_language = "Rust"
+unsafe_target = 0
+
+[tests.hashes]
+"pysrt/tests/test_srttime.py" = "F1AB1BDECD5433FCEC908384597A6D3C2199A9B0B0B0D8E84AFD50167A1F74BC"
+"pysrt/tests/test_srtitem.py" = "03BD2BF7156F57667CB4683BAFC3ADFF90BB76B30C415F539540C107273DFB0C"
+"pysrt/tests/test_srtfile.py" = "409736A921D22E2FAA605ABAA5429756E35B43ADF4FF5601990322645177FA58"
