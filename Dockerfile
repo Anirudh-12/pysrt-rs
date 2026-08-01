@@ -44,7 +44,6 @@ RUN cargo fetch
 # ── Copy the full project source ─────────────────────────────────────────────
 COPY src/            ./src/
 COPY tests/          ./tests/
-COPY reference_pysrt/ ./reference_pysrt/
 COPY fuzz/           ./fuzz/
 COPY bench/          ./bench/
 COPY DECISIONS.md .port-mortem.toml README.md ./
@@ -70,16 +69,15 @@ LABEL org.opencontainers.image.title="pysrt-rs" \
 
 WORKDIR /app
 
-# Install pytest and the compiled pysrt wheel into Python 3.12
+# Install pytest, pure-Python pysrt (for diff fuzz / benchmarking), and our compiled libsrt wheel
 COPY --from=builder /wheels /wheels
-RUN pip install --no-cache-dir pytest /wheels/*.whl && rm -rf /wheels
+RUN pip install --no-cache-dir pytest pysrt /wheels/*.whl && rm -rf /wheels
 
 # Copy the native CLI binary
 COPY --from=builder /build/target/release/srt /usr/local/bin/srt
 
 # Copy runtime artefacts
 COPY --from=builder /build/tests/            ./tests/
-COPY --from=builder /build/reference_pysrt/  ./reference_pysrt/
 COPY --from=builder /build/fuzz/             ./fuzz/
 COPY --from=builder /build/bench/            ./bench/
 COPY --from=builder /build/DECISIONS.md      ./DECISIONS.md
