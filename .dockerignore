@@ -1,0 +1,27 @@
+# Rust build artifacts
+target/
+fuzz/target/
+
+# Python artifacts
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.venv/
+*.egg-info/
+
+# Compiled Python extensions (built inside Docker, not needed from host)
+*.so
+*.pyd
+*.cp*.pyd
+
+# Test generated output
+tests/static/temp.srt
+tests/tests/static/temp.srt
+tests/original/static/temp.srt
+reference_pysrt/tests/static/temp.srt
+
+# Misc
+.git/
+.pytest_cache/
+*.pdb
+Cargo.lock
