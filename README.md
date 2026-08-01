@@ -110,6 +110,9 @@ tests/port/test_save.py::TestCorrectedSave::test_save_roundtrip_fidelity PASSED
 - **`test_save_lf_line_endings`**: Proves that saving with `eol='\n'` produces pure Unix LF line endings with zero `\r` bytes and round-trips with identical SubRipItem data.
 - **`test_save_roundtrip_fidelity`**: Proves that saving and reloading preserves all timestamps, coordinates, tags, and subtitle text across 1,000+ items.
 
+> **Verification against original Python `byroot/pysrt`**:
+> Running our corrected `tests/port/test_save.py` against the **original pure-Python library** (`PYTHONPATH=reference_pysrt pytest tests/port/test_save.py -v`) also results in **3 passed (100% parity)**. Conversely, running the unmodified upstream `test_save` against the original pure-Python library produces the exact same `b'0\n...' != b'0\r\n...'` assertion failure.
+
 ### Native Rust Tests
 
 ```
