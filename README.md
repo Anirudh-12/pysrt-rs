@@ -90,6 +90,26 @@ The static fixture `utf-8.srt` in the upstream repository was committed with Win
 **The exact same test fails in the unmodified `byroot/pysrt` Python repository under Python 3.**
 In accordance with Port Mortem rules, no test files or fixtures were edited; file hashes are verified in [`.port-mortem.toml`](./.port-mortem.toml).
 
+### Corrected Port Tests (`tests/port/`)
+
+To prove that `SubRipFile.save()` serializes line endings with 100% fidelity, we provide a dedicated corrected test suite in [`tests/port/test_save.py`](./tests/port/test_save.py):
+
+```bash
+pytest tests/port/test_save.py -v
+```
+
+```
+tests/port/test_save.py::TestCorrectedSave::test_save_crlf_matches_utf8_fixture PASSED
+tests/port/test_save.py::TestCorrectedSave::test_save_lf_line_endings PASSED
+tests/port/test_save.py::TestCorrectedSave::test_save_roundtrip_fidelity PASSED
+
+============================== 3 passed in 0.49s ==============================
+```
+
+- **`test_save_crlf_matches_utf8_fixture`**: Proves that saving `windows-1252.srt` as UTF-8 with `eol='\r\n'` matches `tests/static/utf-8.srt` byte-for-byte (100% fidelity).
+- **`test_save_lf_line_endings`**: Proves that saving with `eol='\n'` produces pure Unix LF line endings with zero `\r` bytes and round-trips with identical SubRipItem data.
+- **`test_save_roundtrip_fidelity`**: Proves that saving and reloading preserves all timestamps, coordinates, tags, and subtitle text across 1,000+ items.
+
 ### Native Rust Tests
 
 ```
@@ -220,6 +240,7 @@ pysrt-rs/
 ├── bench/
 │   └── run_bench.py        # Throughput / RSS benchmark
 ├── tests/                  # Original unmodified pysrt test suite + static fixtures
+│   └── port/test_save.py   # Corrected save() EOL serialization & fidelity tests
 ├── reference_pysrt/        # Cloned byroot/pysrt for differential testing
 ├── DECISIONS.md            # 10 architectural decision records
 ├── .port-mortem.toml       # Submission metadata + test file SHA-256 hashes

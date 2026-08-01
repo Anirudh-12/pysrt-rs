@@ -882,10 +882,16 @@ impl PySubRipFile {
             } else {
                 format!(" {}", item_ref.position)
             };
-            let block = format!("{}\n{} --> {}{}\n{}\n", item_ref.index, s_time, e_time, pos, item_ref.text);
+            let mut block = format!("{}\n{} --> {}{}\n{}\n", item_ref.index, s_time, e_time, pos, item_ref.text);
+            if !block.ends_with("\n\n") {
+                block.push('\n');
+            }
+            if eol_str != "\n" {
+                block = block.replace('\n', eol_str);
+            }
             texts.push(block);
         }
-        let content = texts.join(eol_str);
+        let content = texts.join("");
 
         let codecs_mod = PyModule::import_bound(py, "codecs")?;
         let open_fn = codecs_mod.getattr("open")?;
