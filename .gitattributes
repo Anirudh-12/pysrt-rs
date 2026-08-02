@@ -1,5 +1,5 @@
-# Ensure test fixtures and source files maintain LF line endings across all platforms
+# Ensure LF for source code, but CRLF for upstream SRT test fixtures
 * text=auto eol=lf
-*.srt text eol=lf
 *.py text eol=lf
 *.rs text eol=lf
+tests/static/*.srt text eol=crlf
