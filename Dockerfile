@@ -65,7 +65,7 @@ FROM python:3.12-slim AS runtime
 
 LABEL org.opencontainers.image.title="pysrt-rs" \
       org.opencontainers.image.description="Port Mortem 2026 Track D — memory-safe Rust port of byroot/pysrt" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="GPL-3.0"
 
 WORKDIR /app
 

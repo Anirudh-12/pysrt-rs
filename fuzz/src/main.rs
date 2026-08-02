@@ -1,5 +1,5 @@
 use proptest::prelude::*;
-use pysrt::{SubRipFile, SubRipItem, SubRipTime};
+use libsrt::{SubRipFile, SubRipItem, SubRipTime, item::ItemIndex};
 
 proptest! {
     #[test]
@@ -41,10 +41,10 @@ proptest! {
     ) {
         let start = SubRipTime::new(0, 0, s_s, s_ms);
         let end = SubRipTime::new(0, 0, s_s + dur_s, dur_ms);
-        let item = SubRipItem::new(index, start, end, text.clone(), String::new());
+        let item = SubRipItem::new(ItemIndex::Int(index), start, end, text.clone(), String::new());
         let s = item.to_string();
         if let Ok(parsed) = SubRipItem::from_string(&s) {
-            prop_assert_eq!(parsed.index, index);
+            prop_assert_eq!(parsed.index, ItemIndex::Int(index));
             prop_assert_eq!(parsed.start, start);
             prop_assert_eq!(parsed.end, end);
         }
@@ -57,7 +57,7 @@ proptest! {
     ) {
         let items: Vec<SubRipItem> = indices.iter().zip(starts.iter()).map(|(&idx, &st)| {
             SubRipItem::new(
-                idx,
+                ItemIndex::Int(idx),
                 SubRipTime::from_ordinal(st),
                 SubRipTime::from_ordinal(st + 100),
                 "Subtitle text".to_string(),
@@ -70,7 +70,7 @@ proptest! {
 
         for i in 1..srt_file.len() {
             prop_assert!(srt_file[i - 1].start <= srt_file[i].start);
-            prop_assert_eq!(srt_file[i].index, (i + 1) as i32);
+            prop_assert_eq!(&srt_file[i].index, &ItemIndex::Int((i + 1) as i32));
         }
     }
 }

@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "python"), forbid(unsafe_code))]
+#![cfg_attr(feature = "python", allow(clippy::useless_conversion, clippy::wrong_self_convention, unexpected_cfgs))]
 
 pub mod error;
 pub mod file;

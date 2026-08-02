@@ -296,10 +296,10 @@ so confounders are fully documented.
 ====================================================================
 Operation              | Python (pysrt)  | Rust (pysrt-rs) | Speedup   
 --------------------------------------------------------------------
-Parse (1000 subs)      |       7.08 ms |       0.41 ms |    17.2x
-Parse (Movie - 1332)   |       9.73 ms |       0.69 ms |    14.1x
-Shift (1000 subs)      |       2.27 ms |       0.46 ms |     5.0x
-Serialize (text)       |       0.15 ms |       0.04 ms |     3.4x
+Parse (1000 subs)      |       7.20 ms |       0.44 ms |    16.4x
+Parse (Movie - 1332)   |      10.42 ms |       0.81 ms |    12.9x
+Shift (1000 subs)      |       2.41 ms |       0.46 ms |     5.3x
+Serialize (text)       |       0.16 ms |       0.05 ms |     3.3x
 ====================================================================
 ```
 
@@ -307,4 +307,4 @@ Serialize (text)       |       0.15 ms |       0.04 ms |     3.4x
 
 ## License
 
-MIT — same as the original `byroot/pysrt`.
+GPL-3.0 — same as the original `byroot/pysrt`.

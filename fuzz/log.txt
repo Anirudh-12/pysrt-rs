@@ -1,13 +1,13 @@
-2026-08-01 21:33:57 [INFO] ============================================================
-2026-08-01 21:33:57 [INFO] STARTING DIFFERENTIAL FUZZING  (pysrt-rs vs py-pysrt)
-2026-08-01 21:33:57 [INFO] Rust  pysrt version : 1.1.2
-2026-08-01 21:33:57 [INFO] Python pysrt path   : C:\Users\aksha\OneDrive\Documents\PYSRT_PORT\pysrt-rs\.venv\Lib\site-packages\pysrt\__init__.py
-2026-08-01 21:33:57 [INFO] ============================================================
-2026-08-01 21:33:57 [INFO] Running 5000 differential tests on SubRipTime...
-2026-08-01 21:33:57 [INFO] SubRipTime: 5000 passed, 0 failed out of 5000
-2026-08-01 21:33:57 [INFO] Running 2000 differential tests on SubRipItem...
-2026-08-01 21:33:57 [INFO] SubRipItem: 2000 passed, 0 failed out of 2000
-2026-08-01 21:33:57 [INFO] ============================================================
-2026-08-01 21:33:57 [INFO] ALL 7000 DIFFERENTIAL FUZZING TESTS PASSED — 100% PARITY
-2026-08-01 21:33:57 [INFO] Full log written to: C:\Users\aksha\OneDrive\Documents\PYSRT_PORT\pysrt-rs\fuzz\log.txt
-2026-08-01 21:33:57 [INFO] ============================================================
+2026-08-02 08:44:52 [INFO] ============================================================
+2026-08-02 08:44:52 [INFO] STARTING DIFFERENTIAL FUZZING  (pysrt-rs vs py-pysrt)
+2026-08-02 08:44:52 [INFO] Rust  pysrt version : 1.1.2
+2026-08-02 08:44:52 [INFO] Python pysrt path   : C:\Users\aksha\OneDrive\Documents\PYSRT_PORT\pysrt-rs\.venv\Lib\site-packages\pysrt\__init__.py
+2026-08-02 08:44:52 [INFO] ============================================================
+2026-08-02 08:44:52 [INFO] Running 5000 differential tests on SubRipTime...
+2026-08-02 08:44:52 [INFO] SubRipTime: 5000 passed, 0 failed out of 5000
+2026-08-02 08:44:52 [INFO] Running 2000 differential tests on SubRipItem...
+2026-08-02 08:44:52 [INFO] SubRipItem: 2000 passed, 0 failed out of 2000
+2026-08-02 08:44:52 [INFO] ============================================================
+2026-08-02 08:44:52 [INFO] ALL 7000 DIFFERENTIAL FUZZING TESTS PASSED — 100% PARITY
+2026-08-02 08:44:52 [INFO] Full log written to: C:\Users\aksha\OneDrive\Documents\PYSRT_PORT\pysrt-rs\fuzz\log.txt
+2026-08-02 08:44:52 [INFO] ============================================================

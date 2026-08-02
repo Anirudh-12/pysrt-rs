@@ -27,7 +27,7 @@ impl SubRipTime {
     pub fn from_string(source: &str) -> Result<Self> {
         // Split by ':', '.', ','
         let parts: Vec<&str> = source
-            .split(|c| c == ':' || c == '.' || c == ',')
+            .split([':', '.', ','])
             .collect();
         if parts.len() != 4 {
             return Err(SrtError::InvalidTimeString(source.to_string()));

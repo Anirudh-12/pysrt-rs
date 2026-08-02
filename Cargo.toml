@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Anirudh <Anirudh-12@users.noreply.github.com>"]
 description = "A high-performance, memory-safe Rust port of byroot/pysrt (SubRip .srt subtitle parser/editor)"
 repository = "https://github.com/Anirudh-12/pysrt-rs"
-license = "MIT"
+license = "GPL-3.0"
 
 [lib]
 name = "libsrt"

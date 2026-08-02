@@ -1,9 +1,10 @@
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
+use std::ops::{Deref, DerefMut};
 use encoding_rs::Encoding;
 use crate::error::{Result, SrtError};
-use crate::item::SubRipItem;
+use crate::item::{ItemIndex, SubRipItem};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorHandling {
@@ -175,8 +176,7 @@ impl SubRipFile {
             .map(|p| p.as_ref().to_string_lossy().to_string())
             .or_else(|| self.path.clone())
             .ok_or_else(|| {
-                SrtError::Io(std::io::Error::new(
-                    std::io::ErrorKind::Other,
+                SrtError::Io(std::io::Error::other(
                     "No file path specified for save",
                 ))
             })?;
@@ -218,5 +218,44 @@ impl SubRipFile {
             }
         }
         Ok(())
+    }
+
+    pub fn sort(&mut self) {
+        self.items.sort();
+    }
+
+    pub fn clean_indexes(&mut self) {
+        self.sort();
+        for (i, item) in self.items.iter_mut().enumerate() {
+            item.index = ItemIndex::Int((i + 1) as i32);
+        }
+    }
+
+    pub fn slice(&self, start: usize, end: usize) -> Vec<SubRipItem> {
+        let len = self.items.len();
+        let s = start.min(len);
+        let e = end.min(len).max(s);
+        self.items[s..e].to_vec()
+    }
+
+    pub fn at(&self, time: crate::time::SubRipTime) -> Vec<&SubRipItem> {
+        self.items
+            .iter()
+            .filter(|item| item.start <= time && item.end >= time)
+            .collect()
+    }
+}
+
+impl Deref for SubRipFile {
+    type Target = [SubRipItem];
+
+    fn deref(&self) -> &Self::Target {
+        &self.items
+    }
+}
+
+impl DerefMut for SubRipFile {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.items
     }
 }
