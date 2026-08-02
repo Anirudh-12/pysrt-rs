@@ -97,18 +97,18 @@ The static fixture `utf-8.srt` in the upstream repository was committed with Win
 **The exact same test fails in the unmodified `byroot/pysrt` Python repository under Python 3.**
 In accordance with Port Mortem rules, no test files or fixtures were edited; file hashes are verified in [`.port-mortem.toml`](./.port-mortem.toml).
 
-### Corrected Port Tests (`tests/port/`)
+### Corrected Python Test (`tests/fixed/`)
 
-To prove that `SubRipFile.save()` serializes line endings with 100% fidelity, we provide a dedicated corrected test suite in [`tests/port/test_save.py`](./tests/port/test_save.py):
+To prove that `SubRipFile.save()` serializes line endings with 100% fidelity, we provide a dedicated corrected test suite in [`tests/fixed/test_save.py`](./tests/fixed/test_save.py):
 
 ```bash
-pytest tests/port/test_save.py -v
+pytest tests/fixed/test_save.py -v
 ```
 
 ```
-tests/port/test_save.py::TestCorrectedSave::test_save_crlf_matches_utf8_fixture PASSED
-tests/port/test_save.py::TestCorrectedSave::test_save_lf_line_endings PASSED
-tests/port/test_save.py::TestCorrectedSave::test_save_roundtrip_fidelity PASSED
+tests/fixed/test_save.py::TestCorrectedSave::test_save_crlf_matches_utf8_fixture PASSED
+tests/fixed/test_save.py::TestCorrectedSave::test_save_lf_line_endings PASSED
+tests/fixed/test_save.py::TestCorrectedSave::test_save_roundtrip_fidelity PASSED
 
 ============================== 3 passed in 0.49s ==============================
 ```
@@ -118,23 +118,24 @@ tests/port/test_save.py::TestCorrectedSave::test_save_roundtrip_fidelity PASSED
 - **`test_save_roundtrip_fidelity`**: Proves that saving and reloading preserves all timestamps, coordinates, tags, and subtitle text across 1,000+ items.
 
 > **Verification against original Python `byroot/pysrt`**:
-> Running our corrected `tests/port/test_save.py` against the **original pure-Python library** (`PYTHONPATH=reference_pysrt pytest tests/port/test_save.py -v`) also results in **3 passed (100% parity)**. Conversely, running the unmodified upstream `test_save` against the original pure-Python library produces the exact same `b'0\n...' != b'0\r\n...'` assertion failure.
+> Running our corrected `tests/fixed/test_save.py` against the **original pure-Python library** (`PYTHONPATH=reference_pysrt pytest tests/fixed/test_save.py -v`) also results in **3 passed (100% parity)**. Conversely, running the unmodified upstream `test_save` against the original pure-Python library produces the exact same `b'0\n...' != b'0\r\n...'` assertion failure.
 
-### Native Rust Tests
+### Native Rust Tests (`tests/port/`)
 
-```
+In addition to the Python extension test suite, we provide a **100% native Rust integration test suite** in [`tests/port/`](./tests/port/) that ports all 75 original Python test cases 1-to-1:
+
+```bash
 cargo test --all-targets
 ```
 
-```
-test time::tests::test_default_value       ... ok
-test time::tests::test_milliseconds        ... ok
-test time::tests::test_parse_string        ... ok
-test time::tests::test_parse_int_recovery  ... ok
-test tests::test_duration_parsing          ... ok
-
-test result: ok. 5 passed; 0 failed
-```
+| Test Target | File | Test Count | Parity |
+|---|---|---|---|
+| `test_srttime` | `tests/port/test_srttime.rs` | 21 / 21 | 100% parity with `test_srttime.py` |
+| `test_srtitem` | `tests/port/test_srtitem.rs` | 28 / 28 | 100% parity with `test_srtitem.py` |
+| `test_srtfile` | `tests/port/test_srtfile.rs` | 26 / 26 | 100% parity with `test_srtfile.py` (with CRLF fix) |
+| **Integration Total** | | **75 / 75** | **100% Native Rust Parity** |
+| Unit Tests | `src/lib.rs`, `src/bin/srt.rs` | 9 / 9 | Core library & CLI tests |
+| **Workspace Total** | | **84 / 84** | **100% Passing** |
 
 ---
 

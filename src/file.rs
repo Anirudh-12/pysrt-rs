@@ -13,12 +13,18 @@ pub enum ErrorHandling {
     Raise = 2,
 }
 
-#[derive(Default, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SubRipFile {
     pub items: Vec<SubRipItem>,
     pub eol: String,
     pub path: Option<String>,
     pub encoding: String,
+}
+
+impl Default for SubRipFile {
+    fn default() -> Self {
+        Self::new(Vec::new(), None, None, None)
+    }
 }
 
 impl SubRipFile {
@@ -115,7 +121,13 @@ impl SubRipFile {
                 let s = Self::decode_utf32_be(&bytes)?;
                 (s, "utf_32_be".to_string())
             } else if let Some(enc) = Encoding::for_label(enc_str.as_bytes()) {
-                let (dec, _, _) = enc.decode(&bytes);
+                if enc_str.eq_ignore_ascii_case("ascii") && !bytes.is_ascii() {
+                    return Err(SrtError::Encoding("Non-ascii byte in ascii encoding".to_string()));
+                }
+                let (dec, _, had_errors) = enc.decode(&bytes);
+                if had_errors {
+                    return Err(SrtError::Encoding(format!("Decoding error for encoding {}", enc_str)));
+                }
                 let name = match enc.name() {
                     "UTF-8" => "utf_8",
                     "windows-1252" => "cp1252",
@@ -133,7 +145,10 @@ impl SubRipFile {
                 let s = Self::decode_utf32_be(&bytes[4..])?;
                 (s, "utf_32_be".to_string())
             } else {
-                let (dec, enc, _) = encoding_rs::UTF_8.decode(&bytes);
+                let (dec, enc, had_errors) = encoding_rs::UTF_8.decode(&bytes);
+                if had_errors {
+                    return Err(SrtError::Encoding("Decoding error for UTF-8".to_string()));
+                }
                 let name = match enc.name() {
                     "UTF-8" => "utf_8",
                     "windows-1252" => "cp1252",
@@ -197,21 +212,37 @@ impl SubRipFile {
 
     pub fn text(&self) -> String {
         let mut buf = String::new();
-        for (i, item) in self.items.iter().enumerate() {
-            buf.push_str(&item.to_string());
-            if i + 1 < self.items.len() {
-                buf.push_str(&self.eol);
+        for item in &self.items {
+            let mut block = item.to_string();
+            if !block.ends_with("\n\n") {
+                block.push('\n');
             }
+            if self.eol != "\n" {
+                block = block.replace('\n', &self.eol);
+            }
+            buf.push_str(&block);
         }
         buf
     }
 
+    pub fn subtitle_text(&self) -> String {
+        self.items
+            .iter()
+            .map(|i| i.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
     pub fn write_into<W: Write>(&self, writer: &mut W) -> Result<()> {
-        for (i, item) in self.items.iter().enumerate() {
-            write!(writer, "{}", item)?;
-            if i + 1 < self.items.len() {
-                write!(writer, "{}", self.eol)?;
+        for item in &self.items {
+            let mut block = item.to_string();
+            if !block.ends_with("\n\n") {
+                block.push('\n');
             }
+            if self.eol != "\n" {
+                block = block.replace('\n', &self.eol);
+            }
+            write!(writer, "{}", block)?;
         }
         Ok(())
     }
