@@ -1,3 +1,0 @@
-# Ignore all files in reference_pysrt/ so the reference vendor code is not tracked in git
-*
-!.gitignore

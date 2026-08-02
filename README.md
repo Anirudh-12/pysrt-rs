@@ -16,15 +16,6 @@ docker build -t pysrt-rs .
 
 # Run the ORIGINAL unmodified test suite (74/75 pass — see Note on upstream test failure below)
 docker run --rm pysrt-rs
-
-# Run the 7,000-case differential fuzzer against reference Python pysrt
-docker run --rm pysrt-rs python fuzz/diff_fuzz.py
-
-# Run the benchmark suite
-docker run --rm pysrt-rs python bench/run_bench.py
-
-# Test the native Rust CLI binary
-docker run --rm pysrt-rs srt --help
 ```
 
 ### Option 2: Local Host Build
@@ -41,6 +32,20 @@ pytest tests/test_srttime.py tests/test_srtitem.py tests/test_srtfile.py -v
 > **Note on `libsrt` naming**: The Rust Python extension is installed as `libsrt` so that both our Rust port and the original Python `pysrt` library can be installed simultaneously in the same environment (allowing differential fuzzing and side-by-side benchmarking). When running `pytest tests/`, `tests/conftest.py` automatically maps `libsrt` to `pysrt` in `sys.modules`, allowing the original test suite to run 100% unmodified.
 
 > **Requires (Local Host)**: Rust ≥ 1.75, Python ≥ 3.8, [maturin](https://github.com/PyO3/maturin) (`pip install maturin`).
+
+---
+
+## Differential Fuzz Checker
+
+Run the 7,000-case differential fuzzer against the reference Python `pysrt` library:
+
+```bash
+# Using Docker
+docker run --rm pysrt-rs python fuzz/diff_fuzz.py
+
+# Or Local Host
+python fuzz/diff_fuzz.py
+```
 
 ---
 
@@ -141,6 +146,10 @@ test result: ok. 5 passed; 0 failed
 reference Python pysrt simultaneously and asserts identical output at every step.
 
 ```bash
+# Using Docker
+docker run --rm pysrt-rs python fuzz/diff_fuzz.py
+
+# Or Local Host
 python fuzz/diff_fuzz.py
 ```
 
@@ -202,6 +211,10 @@ clear rationale for divergences from the original Python implementation:
 9. SubRip coordinates — strongly typed `position: String` vs. unstructured dicts
 10. Comparison traits — `PartialOrd`/`Ord` vs. `ComparableMixin`
 
+### Standalone Rust Library API (`libsrt`)
+
+The core engine is documented as a standalone Rust crate in [`RUST_LIBRARY.md`](./RUST_LIBRARY.md), detailing dual `crate-type` (`["cdylib", "rlib"]`), data structures (`SubRipFile`, `SubRipItem`, `SubRipTime`), zero-unsafe guarantees, error handling modes, and practical usage examples.
+
 ---
 
 ## Innovation — 10%
@@ -247,6 +260,7 @@ pysrt-rs/
 ├── tests/                  # Original unmodified pysrt test suite + static fixtures
 │   └── port/test_save.py   # Corrected save() EOL serialization & fidelity tests
 ├── reference_pysrt/        # Cloned byroot/pysrt for differential testing
+├── RUST_LIBRARY.md         # Standalone Rust library (libsrt) API documentation & guide
 ├── DECISIONS.md            # 10 architectural decision records
 ├── .port-mortem.toml       # Submission metadata + test file SHA-256 hashes
 ├── Cargo.toml              # Rust crate — optional python feature
@@ -258,6 +272,10 @@ pysrt-rs/
 ## Benchmark Methodology
 
 ```bash
+# Using Docker
+docker run --rm pysrt-rs python bench/run_bench.py
+
+# Or Local Host
 python bench/run_bench.py
 ```
 
