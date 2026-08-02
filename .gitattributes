@@ -2,4 +2,4 @@
 * text=auto eol=lf
 *.py text eol=lf
 *.rs text eol=lf
-tests/static/*.srt text eol=crlf
+*.srt text eol=crlf
