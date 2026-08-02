@@ -137,6 +137,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             new_fps,
             file,
         } => {
+            // Note: new_fps / old_fps reproduces Python pysrt.commands.SubRipShifter.rate (final / initial).
             let ratio = new_fps / old_fps;
             let mut srt = open(&file, cli.encoding.as_deref())?;
             srt.shift(0, 0, 0, 0, Some(ratio));

@@ -3,7 +3,7 @@ use std::fmt;
 use crate::error::{Result, SrtError};
 use crate::time::SubRipTime;
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum ItemIndex {
     Int(i32),
     Str(String),
@@ -163,7 +163,8 @@ impl SubRipItem {
 
 impl Ord for SubRipItem {
     fn cmp(&self, other: &Self) -> Ordering {
-        (self.start, self.end).cmp(&(other.start, other.end))
+        (self.start, self.end, &self.index, &self.text, &self.position)
+            .cmp(&(other.start, other.end, &other.index, &other.text, &other.position))
     }
 }
 
