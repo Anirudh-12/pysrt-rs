@@ -286,6 +286,38 @@ impl SubRipFile {
             .filter(|item| item.start <= time && item.end >= time)
             .collect()
     }
+
+    pub fn break_lines(&mut self, max_len: usize) {
+        for item in self.items.iter_mut() {
+            item.text = Self::break_text(&item.text, max_len);
+        }
+    }
+
+    pub fn break_text(text: &str, max_len: usize) -> String {
+        let mut result_lines = Vec::new();
+        for line in text.lines() {
+            if line.len() <= max_len {
+                result_lines.push(line.to_string());
+                continue;
+            }
+            let mut current = String::new();
+            for word in line.split_whitespace() {
+                if current.is_empty() {
+                    current.push_str(word);
+                } else if current.len() + 1 + word.len() <= max_len {
+                    current.push(' ');
+                    current.push_str(word);
+                } else {
+                    result_lines.push(current);
+                    current = word.to_string();
+                }
+            }
+            if !current.is_empty() {
+                result_lines.push(current);
+            }
+        }
+        result_lines.join("\n")
+    }
 }
 
 impl Deref for SubRipFile {
@@ -341,5 +373,22 @@ mod tests {
         );
         assert_eq!(sliced.len(), 1);
         assert_eq!(sliced[0].text, "Second");
+    }
+
+    #[test]
+    fn test_break_lines() {
+        let item = SubRipItem::new(
+            ItemIndex::Int(1),
+            SubRipTime::from_ordinal(1000),
+            SubRipTime::from_ordinal(2000),
+            "For a movie in 2 parts with the first part 48 minutes and 18 seconds long".to_string(),
+            "".to_string(),
+        );
+        let mut srt = SubRipFile::new(vec![item.clone()], None, None, None);
+        srt.break_lines(30);
+        assert_eq!(
+            srt.items[0].text,
+            "For a movie in 2 parts with\nthe first part 48 minutes and\n18 seconds long"
+        );
     }
 }

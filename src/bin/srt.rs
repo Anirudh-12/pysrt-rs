@@ -46,6 +46,13 @@ enum Commands {
         #[arg(required = true, num_args = 2..)]
         args: Vec<String>,
     },
+    /// Break long subtitle lines
+    Break {
+        /// Maximum number of characters per line
+        length: usize,
+        /// Input .srt subtitle file path
+        file: PathBuf,
+    },
 }
 
 fn parse_duration_str(s: &str) -> Result<i64, String> {
@@ -198,6 +205,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 part_file.save(Some(&out_path))?;
             }
         }
+        Commands::Break { length, file } => {
+            let mut srt = open(&file, cli.encoding.as_deref())?;
+            srt.break_lines(length);
+
+            if cli.in_place {
+                let backup = file.with_extension("srt.bak");
+                fs::copy(&file, backup)?;
+                srt.save(Some(&file))?;
+            } else if let Some(out_path) = cli.output {
+                srt.save(Some(out_path))?;
+            } else {
+                print!("{}", srt.text());
+            }
+        }
     }
 
     Ok(())
@@ -225,6 +246,18 @@ mod tests {
                 assert_eq!(args, vec!["48m18s", "movie.srt"]);
             }
             _ => panic!("Expected Split command"),
+        }
+    }
+
+    #[test]
+    fn test_cli_break_parsing() {
+        let cli = Cli::try_parse_from(["srt", "break", "30", "movie.srt"]).unwrap();
+        match cli.command {
+            Commands::Break { length, file } => {
+                assert_eq!(length, 30);
+                assert_eq!(file, PathBuf::from("movie.srt"));
+            }
+            _ => panic!("Expected Break command"),
         }
     }
 }
