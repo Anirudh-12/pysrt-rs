@@ -117,6 +117,8 @@ pytest tests/test_srttime.py tests/test_srtitem.py tests/test_srtfile.py
 | `test_srtfile.py` | 35 / 36 | 1 | Pre-existing upstream fixture bug¹ |
 | **Total** | **74 / 75** | **1** | |
 
+#### Why test_save fails <a id="why-test_save-fails"></a>
+
 ¹ **Why `TestSerialization::test_save` fails in both our Rust port AND the original `byroot/pysrt` repo:**
 In `tests/test_srtfile.py`, `test_save` saves a file with `eol='\n'`, and then compares the output byte-for-byte against the static reference fixture file `tests/static/utf-8.srt`:
 ```python
