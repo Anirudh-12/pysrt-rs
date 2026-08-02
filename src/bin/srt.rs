@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
-use libsrt::open;
+use libsrt::{open, SubRipTime};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
 #[command(name = "srt", version, about = "A high-performance SubRip (.srt) subtitle editor (Port Mortem Track D)")]
@@ -40,10 +40,32 @@ enum Commands {
         /// Input .srt subtitle file path
         file: PathBuf,
     },
+    /// Split subtitle file into multiple parts
+    Split {
+        /// Timestamps to split at followed by input .srt subtitle file path, e.g. "48m18s" "movie.srt"
+        #[arg(required = true, num_args = 2..)]
+        args: Vec<String>,
+    },
 }
 
 fn parse_duration_str(s: &str) -> Result<i64, String> {
     let s_trim = s.trim();
+    if s_trim.contains(':') {
+        if let Ok(t) = SubRipTime::from_string(s_trim) {
+            return Ok(t.ordinal);
+        }
+        let parts: Vec<&str> = s_trim.split([':', '.', ',']).collect();
+        if parts.len() == 3 {
+            if let (Ok(h), Ok(m), Ok(s_val)) = (
+                parts[0].parse::<i64>(),
+                parts[1].parse::<i64>(),
+                parts[2].parse::<i64>(),
+            ) {
+                return Ok(h * 3600 * 1000 + m * 60 * 1000 + s_val * 1000);
+            }
+        }
+    }
+
     let negative = s_trim.starts_with('-');
     let body = if negative { &s_trim[1..] } else { s_trim };
 
@@ -122,6 +144,60 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 print!("{}", srt.text());
             }
         }
+        Commands::Split { args } => {
+            if args.len() < 2 {
+                return Err("split command requires at least one limit and a filename".into());
+            }
+            let file_str = &args[args.len() - 1];
+            let limit_strs = &args[..args.len() - 1];
+            let file = PathBuf::from(file_str);
+
+            let srt = open(&file, cli.encoding.as_deref())?;
+
+            let mut limits = vec![0i64];
+            for l_str in limit_strs {
+                let ms = parse_duration_str(l_str)?;
+                limits.push(ms);
+            }
+            let last_end = srt
+                .items
+                .last()
+                .map(|item| item.end.ordinal + 1)
+                .unwrap_or(1);
+            let max_limit = *limits.last().unwrap_or(&0);
+            limits.push(last_end.max(max_limit + 1));
+
+            let stem = file
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("output");
+            let ext = file.extension().and_then(|s| s.to_str());
+            let parent = file.parent().unwrap_or_else(|| Path::new(""));
+
+            for (index, window) in limits.windows(2).enumerate() {
+                let (start, end) = (window[0], window[1]);
+                let file_name = if let Some(ext_str) = ext {
+                    format!("{}.{}.{}", stem, index + 1, ext_str)
+                } else {
+                    format!("{}.{}", stem, index + 1)
+                };
+                let out_path = if parent.as_os_str().is_empty() {
+                    PathBuf::from(file_name)
+                } else {
+                    parent.join(file_name)
+                };
+
+                let mut part_file = srt.slice_by_time(
+                    Some(SubRipTime::from_ordinal(end)),
+                    None,
+                    None,
+                    Some(SubRipTime::from_ordinal(start)),
+                );
+                part_file.shift(0, 0, 0, -start, None);
+                part_file.clean_indexes();
+                part_file.save(Some(&out_path))?;
+            }
+        }
     }
 
     Ok(())
@@ -137,5 +213,18 @@ mod tests {
         assert_eq!(parse_duration_str("-500ms").unwrap(), -500);
         assert_eq!(parse_duration_str("-3").unwrap(), -3000);
         assert_eq!(parse_duration_str("1m12s").unwrap(), 72000);
+        assert_eq!(parse_duration_str("01:00:00,000").unwrap(), 3600000);
+        assert_eq!(parse_duration_str("00:48:18").unwrap(), 2898000);
+    }
+
+    #[test]
+    fn test_cli_split_parsing() {
+        let cli = Cli::try_parse_from(["srt", "split", "48m18s", "movie.srt"]).unwrap();
+        match cli.command {
+            Commands::Split { args } => {
+                assert_eq!(args, vec!["48m18s", "movie.srt"]);
+            }
+            _ => panic!("Expected Split command"),
+        }
     }
 }

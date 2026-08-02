@@ -238,6 +238,48 @@ impl SubRipFile {
         self.items[s..e].to_vec()
     }
 
+    pub fn slice_by_time(
+        &self,
+        starts_before: Option<crate::time::SubRipTime>,
+        starts_after: Option<crate::time::SubRipTime>,
+        ends_before: Option<crate::time::SubRipTime>,
+        ends_after: Option<crate::time::SubRipTime>,
+    ) -> Self {
+        let mut matched = Vec::new();
+        for item in &self.items {
+            let mut keep = true;
+            if let Some(t) = starts_before {
+                if item.start >= t {
+                    keep = false;
+                }
+            }
+            if let Some(t) = starts_after {
+                if item.start <= t {
+                    keep = false;
+                }
+            }
+            if let Some(t) = ends_before {
+                if item.end >= t {
+                    keep = false;
+                }
+            }
+            if let Some(t) = ends_after {
+                if item.end <= t {
+                    keep = false;
+                }
+            }
+            if keep {
+                matched.push(item.clone());
+            }
+        }
+        Self {
+            items: matched,
+            eol: self.eol.clone(),
+            path: self.path.clone(),
+            encoding: self.encoding.clone(),
+        }
+    }
+
     pub fn at(&self, time: crate::time::SubRipTime) -> Vec<&SubRipItem> {
         self.items
             .iter()
@@ -257,5 +299,47 @@ impl Deref for SubRipFile {
 impl DerefMut for SubRipFile {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.items
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::time::SubRipTime;
+    use crate::item::{ItemIndex, SubRipItem};
+
+    #[test]
+    fn test_slice_by_time() {
+        let item1 = SubRipItem::new(
+            ItemIndex::Int(1),
+            SubRipTime::from_ordinal(1000),
+            SubRipTime::from_ordinal(2000),
+            "First".to_string(),
+            "".to_string(),
+        );
+        let item2 = SubRipItem::new(
+            ItemIndex::Int(2),
+            SubRipTime::from_ordinal(3000),
+            SubRipTime::from_ordinal(4000),
+            "Second".to_string(),
+            "".to_string(),
+        );
+        let item3 = SubRipItem::new(
+            ItemIndex::Int(3),
+            SubRipTime::from_ordinal(5000),
+            SubRipTime::from_ordinal(6000),
+            "Third".to_string(),
+            "".to_string(),
+        );
+        let srt = SubRipFile::new(vec![item1, item2, item3], None, None, None);
+
+        let sliced = srt.slice_by_time(
+            Some(SubRipTime::from_ordinal(4500)),
+            None,
+            None,
+            Some(SubRipTime::from_ordinal(2500)),
+        );
+        assert_eq!(sliced.len(), 1);
+        assert_eq!(sliced[0].text, "Second");
     }
 }
