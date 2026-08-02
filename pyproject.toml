@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "libsrt"
 version = "0.1.0"
 description = "High performance Rust port of byroot/pysrt"
-authors = [{name = "Anirudh", email = "Anirudh-12@users.noreply.github.com"}]
+authors = [{name = "K.Anirudh Reddy", email = "anirudhreddykallem2008@gmail.com"}]
 requires-python = ">=3.8"
 
 [tool.maturin]
