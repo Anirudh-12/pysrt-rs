@@ -12,14 +12,16 @@
 # Stage 2 — runtime
 #   • Slim Python image
 #   • Copies /opt/venv + CLI binary + tests + fuzz harness
-#   • Default CMD: run the full original unmodified test suite
+#   • Default CMD: run the complete 75-test Python integration suite
 #
 # Usage:
 #   docker build -t pysrt-rs .
-#   docker run --rm pysrt-rs                              # run test suite
-#   docker run --rm pysrt-rs python fuzz/diff_fuzz.py    # differential fuzz
-#   docker run --rm pysrt-rs python bench/run_bench.py   # benchmark
-#   docker run --rm pysrt-rs srt --help                  # CLI
+#   docker run --rm pysrt-rs                              # run 75-test fixed suite (75/75 pass)
+#   docker run --rm pysrt-rs pytest --original            # run original suite (74/75 pass)
+#   docker run --rm pysrt-rs pytest --all-tests           # run both suites
+#   docker run --rm pysrt-rs python fuzz/diff_fuzz.py     # differential fuzz
+#   docker run --rm pysrt-rs python bench/run_bench.py    # benchmark
+#   docker run --rm pysrt-rs srt --help                   # CLI
 # ---------------------------------------------------------------------------
 
 # ── Stage 1: builder ────────────────────────────────────────────────────────
@@ -77,6 +79,7 @@ RUN pip install --no-cache-dir pytest pysrt /wheels/*.whl && rm -rf /wheels
 COPY --from=builder /build/target/release/srt /usr/local/bin/srt
 
 # Copy runtime artefacts
+COPY --from=builder /build/pyproject.toml    ./pyproject.toml
 COPY --from=builder /build/tests/            ./tests/
 COPY --from=builder /build/fuzz/             ./fuzz/
 COPY --from=builder /build/bench/            ./bench/
@@ -88,9 +91,5 @@ COPY --from=builder /build/README.md         ./README.md
 RUN srt --help > /dev/null && \
     python -c "import libsrt; print('libsrt', libsrt.VERSION_STRING, 'OK')"
 
-# ── Default: run the original unmodified test suite ──────────────────────────
-CMD ["pytest", \
-     "tests/test_srttime.py", \
-     "tests/test_srtitem.py", \
-     "tests/test_srtfile.py", \
-     "-v", "--tb=short"]
+# ── Default: run the complete corrected 75-test Python integration suite ─────
+CMD ["pytest", "-v", "--tb=short"]
