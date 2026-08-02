@@ -602,7 +602,7 @@ impl PySubRipItem {
     #[classmethod]
     fn from_lines(_cls: &Bound<'_, PyType>, py: Python<'_>, lines: Vec<String>) -> PyResult<Self> {
         let str_lines: Vec<&str> = lines.iter().map(|s| s.as_str()).collect();
-        RustSubRipItem::from_lines(str_lines)
+        RustSubRipItem::from_lines(&str_lines)
             .map_err(to_py_err)
             .and_then(|i| Self::from_rust_item(py, i))
     }

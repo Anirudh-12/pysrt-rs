@@ -25,17 +25,26 @@ impl SubRipTime {
     }
 
     pub fn from_string(source: &str) -> Result<Self> {
-        // Split by ':', '.', ','
-        let parts: Vec<&str> = source
-            .split([':', '.', ','])
-            .collect();
-        if parts.len() != 4 {
+        let mut parts = source.split([':', '.', ',']);
+        let h = parts
+            .next()
+            .map(Self::parse_int)
+            .ok_or_else(|| SrtError::InvalidTimeString(source.to_string()))?;
+        let m = parts
+            .next()
+            .map(Self::parse_int)
+            .ok_or_else(|| SrtError::InvalidTimeString(source.to_string()))?;
+        let s = parts
+            .next()
+            .map(Self::parse_int)
+            .ok_or_else(|| SrtError::InvalidTimeString(source.to_string()))?;
+        let ms = parts
+            .next()
+            .map(Self::parse_int)
+            .ok_or_else(|| SrtError::InvalidTimeString(source.to_string()))?;
+        if parts.next().is_some() {
             return Err(SrtError::InvalidTimeString(source.to_string()));
         }
-        let h = Self::parse_int(parts[0]);
-        let m = Self::parse_int(parts[1]);
-        let s = Self::parse_int(parts[2]);
-        let ms = Self::parse_int(parts[3]);
         Ok(Self::new(h, m, s, ms))
     }
 
@@ -45,8 +54,8 @@ impl SubRipTime {
             return val;
         }
         // Match leading ASCII digits
-        let leading: String = digits.chars().take_while(|c| c.is_ascii_digit()).collect();
-        leading.parse::<i64>().unwrap_or(0)
+        let len = digits.bytes().take_while(|b| b.is_ascii_digit()).count();
+        digits[..len].parse::<i64>().unwrap_or(0)
     }
 
     pub fn hours(&self) -> i64 {

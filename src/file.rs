@@ -67,7 +67,7 @@ impl SubRipFile {
             if !line.trim().is_empty() {
                 buffer.push(line);
             } else if !buffer.is_empty() {
-                match SubRipItem::from_lines(buffer.clone()) {
+                match SubRipItem::from_lines(&buffer) {
                     Ok(item) => items.push(item),
                     Err(e) => match error_handling {
                         ErrorHandling::Raise => return Err(e),
@@ -82,7 +82,7 @@ impl SubRipFile {
         }
 
         if !buffer.is_empty() {
-            match SubRipItem::from_lines(buffer) {
+            match SubRipItem::from_lines(&buffer) {
                 Ok(item) => items.push(item),
                 Err(e) => match error_handling {
                     ErrorHandling::Raise => return Err(e),
@@ -150,25 +150,21 @@ impl SubRipFile {
     }
 
     fn decode_utf32_le(bytes: &[u8]) -> Result<String> {
-        let mut chars = Vec::new();
+        let mut string = String::with_capacity(bytes.len() / 4);
         for chunk in bytes.chunks_exact(4) {
             let u = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-            if let Some(c) = std::char::from_u32(u) {
-                chars.push(c);
-            }
+            string.push(std::char::from_u32(u).unwrap_or('\u{FFFD}'));
         }
-        Ok(chars.into_iter().collect())
+        Ok(string)
     }
 
     fn decode_utf32_be(bytes: &[u8]) -> Result<String> {
-        let mut chars = Vec::new();
+        let mut string = String::with_capacity(bytes.len() / 4);
         for chunk in bytes.chunks_exact(4) {
             let u = u32::from_be_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-            if let Some(c) = std::char::from_u32(u) {
-                chars.push(c);
-            }
+            string.push(std::char::from_u32(u).unwrap_or('\u{FFFD}'));
         }
-        Ok(chars.into_iter().collect())
+        Ok(string)
     }
 
     pub fn save<P: AsRef<Path>>(&self, path: Option<P>) -> Result<()> {

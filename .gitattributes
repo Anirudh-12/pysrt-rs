@@ -1,0 +1,5 @@
+# Ensure test fixtures and source files maintain LF line endings across all platforms
+* text=auto eol=lf
+*.srt text eol=lf
+*.py text eol=lf
+*.rs text eol=lf

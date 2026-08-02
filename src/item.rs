@@ -106,19 +106,20 @@ impl SubRipItem {
 
     pub fn from_string(source: &str) -> Result<Self> {
         let lines: Vec<&str> = source.lines().collect();
-        Self::from_lines(lines)
+        Self::from_lines(&lines)
     }
 
-    pub fn from_lines(lines: Vec<&str>) -> Result<Self> {
+    pub fn from_lines(lines: &[&str]) -> Result<Self> {
         if lines.len() < 2 {
             return Err(SrtError::InvalidItem(
                 "SubRipItem requires at least 2 lines".into(),
             ));
         }
-        let mut lines: Vec<&str> = lines.into_iter().map(|l| l.trim_end()).collect();
+        let mut lines = lines;
         let mut index = ItemIndex::None;
         if !lines[0].contains("-->") {
-            let idx_str = lines.remove(0);
+            let idx_str = lines[0].trim_end();
+            lines = &lines[1..];
             if let Ok(val) = idx_str.parse::<i32>() {
                 index = ItemIndex::Int(val);
             } else {
@@ -128,8 +129,12 @@ impl SubRipItem {
         if lines.is_empty() {
             return Err(SrtError::InvalidItem("Missing timestamp line".into()));
         }
-        let (start, end, position) = Self::split_timestamps(lines[0])?;
-        let text = lines[1..].join("\n");
+        let (start, end, position) = Self::split_timestamps(lines[0].trim_end())?;
+        let text = lines[1..]
+            .iter()
+            .map(|l| l.trim_end())
+            .collect::<Vec<_>>()
+            .join("\n");
         Ok(Self {
             index,
             start,
@@ -140,17 +145,13 @@ impl SubRipItem {
     }
 
     pub fn split_timestamps(line: &str) -> Result<(SubRipTime, SubRipTime, String)> {
-        let parts: Vec<&str> = line.split("-->").collect();
-        if parts.len() != 2 {
-            return Err(SrtError::InvalidItem(format!(
-                "Invalid timestamp line: {}",
-                line
-            )));
-        }
-        let start_str = parts[0].trim();
+        let (start_str, right) = line.split_once("-->").ok_or_else(|| {
+            SrtError::InvalidItem(format!("Invalid timestamp line: {}", line))
+        })?;
+        let start_str = start_str.trim();
         let start = SubRipTime::from_string(start_str)?;
 
-        let right = parts[1].trim_start();
+        let right = right.trim_start();
         let (end_str, position) = match right.split_once(' ') {
             Some((end_part, pos_part)) => (end_part, pos_part.to_string()),
             None => (right, String::new()),
