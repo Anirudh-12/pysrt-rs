@@ -3,3 +3,5 @@
 *.py text eol=lf
 *.rs text eol=lf
 *.srt text eol=crlf
+*bom-utf-16*.srt -text
+*bom-utf-32*.srt -text
