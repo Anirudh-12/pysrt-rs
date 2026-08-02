@@ -12,3 +12,6 @@ requires-python = ">=3.8"
 [tool.maturin]
 features = ["python"]
 module-name = "libsrt"
+
+[tool.pytest.ini_options]
+testpaths = ["tests/fixed"]

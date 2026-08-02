@@ -97,28 +97,27 @@ The static fixture `utf-8.srt` in the upstream repository was committed with Win
 **The exact same test fails in the unmodified `byroot/pysrt` Python repository under Python 3.**
 In accordance with Port Mortem rules, no test files or fixtures were edited; file hashes are verified in [`.port-mortem.toml`](./.port-mortem.toml).
 
-### Corrected Python Test (`tests/fixed/`)
+### Complete Corrected Python Suite (`tests/fixed/`)
 
-To prove that `SubRipFile.save()` serializes line endings with 100% fidelity, we provide a dedicated corrected test suite in [`tests/fixed/test_save.py`](./tests/fixed/test_save.py):
+We provide a **complete 75-test Python integration test suite** in [`tests/fixed/`](./tests/fixed/) (`test_srttime.py`, `test_srtitem.py`, `test_srtfile.py`) with `test_save` corrected to use CRLF line endings (`eol='\r\n'`) so it matches `tests/static/utf-8.srt` byte-for-byte.
 
 ```bash
-pytest tests/fixed/test_save.py -v
+# Run the corrected suite (default via pyproject.toml): 75 / 75 tests pass
+pytest -v
+
+# Run the original unmodified upstream suite: 74 / 75 tests pass (1 upstream fixture bug)
+pytest --original -v
+
+# Run both suites simultaneously
+pytest --all-tests -v
 ```
 
 ```
-tests/fixed/test_save.py::TestCorrectedSave::test_save_crlf_matches_utf8_fixture PASSED
-tests/fixed/test_save.py::TestCorrectedSave::test_save_lf_line_endings PASSED
-tests/fixed/test_save.py::TestCorrectedSave::test_save_roundtrip_fidelity PASSED
-
-============================== 3 passed in 0.49s ==============================
+============================= 75 passed in 0.30s ==============================
 ```
-
-- **`test_save_crlf_matches_utf8_fixture`**: Proves that saving `windows-1252.srt` as UTF-8 with `eol='\r\n'` matches `tests/static/utf-8.srt` byte-for-byte (100% fidelity).
-- **`test_save_lf_line_endings`**: Proves that saving with `eol='\n'` produces pure Unix LF line endings with zero `\r` bytes and round-trips with identical SubRipItem data.
-- **`test_save_roundtrip_fidelity`**: Proves that saving and reloading preserves all timestamps, coordinates, tags, and subtitle text across 1,000+ items.
 
 > **Verification against original Python `byroot/pysrt`**:
-> Running our corrected `tests/fixed/test_save.py` against the **original pure-Python library** (`PYTHONPATH=reference_pysrt pytest tests/fixed/test_save.py -v`) also results in **3 passed (100% parity)**. Conversely, running the unmodified upstream `test_save` against the original pure-Python library produces the exact same `b'0\n...' != b'0\r\n...'` assertion failure.
+> Running our corrected `tests/fixed/` suite against the **original pure-Python library** (`PYTHONPATH=reference_pysrt pytest tests/fixed -v`) also results in **75 passed (100% parity)**. Conversely, running the unmodified upstream `tests/original/` against the original pure-Python library produces the exact same `b'0\n...' != b'0\r\n...'` assertion failure.
 
 ### Native Rust Tests (`tests/port/`)
 

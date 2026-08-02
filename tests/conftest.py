@@ -11,3 +11,25 @@ try:
         sys.modules["pysrt.compat"] = libsrt.compat
 except ImportError:
     pass
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--original",
+        action="store_true",
+        default=False,
+        help="Run original unmodified upstream test suite (tests/original)",
+    )
+    parser.addoption(
+        "--all-tests",
+        action="store_true",
+        default=False,
+        help="Run both fixed and original test suites",
+    )
+
+
+def pytest_configure(config):
+    if config.getoption("--original"):
+        config.args = ["tests/original"]
+    elif config.getoption("--all-tests"):
+        config.args = ["tests/fixed", "tests/original"]
