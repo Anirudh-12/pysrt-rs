@@ -61,7 +61,11 @@ docker run --rm pysrt-rs pytest --original -v
 # 1 — Build the Rust library + CLI
 cargo build --release
 
-# 2 — Build the Python extension ('libsrt') and run tests
+# 2 — Create and activate a Python virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 3 — Build the Python extension ('libsrt') and run tests
 maturin develop --features python --release
 
 # Run corrected suite (75 / 75 pass)
