@@ -107,7 +107,7 @@ python fuzz/diff_fuzz.py
 ### Test Results (unmodified original test suite)
 
 ```
-pytest tests/test_srttime.py tests/test_srtitem.py tests/test_srtfile.py
+pytest tests/original/test_srttime.py tests/original/test_srtitem.py tests/original/test_srtfile.py
 ```
 
 | File | Passed | Failed | Notes |
@@ -132,6 +132,9 @@ The static fixture `utf-8.srt` in the upstream repository was committed with Win
 **The exact same test fails in the unmodified `byroot/pysrt` Python repository under Python 3.**
 In accordance with Port Mortem rules, no test files or fixtures were edited; file hashes are verified in [`.port-mortem.toml`](./.port-mortem.toml).
 
+> **Note on `TestIntegration::test_empty_file` (`/dev/null`) on Windows Hosts**:
+> When running the unmodified upstream test suite (`tests/original/`) natively on a **Windows host**, the original pure-Python `byroot/pysrt` repository exhibits **2 test failures (73 / 75 pass)** because `test_empty_file` attempts to open `/dev/null` (`file = pysrt.open('/dev/null')`). On Windows, `/dev/null` does not exist (`FileNotFoundError: [Errno 2] No such file or directory: '/dev/null'`), whereas on Linux/Docker it is a valid device node (74 / 75 pass). In contrast, our Rust port (`pysrt-rs`) transparently handles `/dev/null` path translation on Windows, allowing `test_empty_file` to **pass even on a Windows host** (74 / 75 pass).
+
 ### Complete Corrected Python Suite (`tests/fixed/`)
 
 We provide a **complete 75-test Python integration test suite** in [`tests/fixed/`](./tests/fixed/) (`test_srttime.py`, `test_srtitem.py`, `test_srtfile.py`) with `test_save` corrected to use CRLF line endings (`eol='\r\n'`) so it matches `tests/static/utf-8.srt` byte-for-byte.
@@ -152,7 +155,7 @@ pytest --all-tests -v
 ```
 
 > **Verification against original Python `byroot/pysrt`**:
-> Running our corrected `tests/fixed/` suite against the **original pure-Python library** (`PYTHONPATH=reference_pysrt pytest tests/fixed -v`) also results in **75 passed (100% parity)**. Conversely, running the unmodified upstream `tests/original/` against the original pure-Python library produces the exact same `b'0\n...' != b'0\r\n...'` assertion failure.
+> Running our corrected `tests/fixed/` suite against the **original pure-Python library** (`PYTHONPATH=reference_pysrt pytest tests/fixed -v`) on Linux/Docker results in **75 passed (100% parity)**. Conversely, running the unmodified upstream `tests/original/` against the original pure-Python library produces the exact same `b'0\n...' != b'0\r\n...'` assertion failure (along with the `/dev/null` `FileNotFoundError` when executed natively on Windows hosts).
 
 ### Native Rust Tests (`tests/port/`)
 
