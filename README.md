@@ -31,7 +31,16 @@ docker run --rm pysrt-rs
 
 #### B. Running Original Unmodified Upstream Test Suite (74 / 75 Pass)
 
-Runs the original unmodified upstream Python test suite (`tests/original/`). Exactly **74 / 75 tests pass**, with 1 known upstream fixture bug in `test_save` (where an LF file is asserted against a CRLF reference fixture — see [Why test_save fails](#why-test_save-fails)).
+Runs the original unmodified upstream Python test suite (`tests/original/`). Exactly **74 / 75 tests pass** on Linux/macOS and Docker, with 1 known upstream fixture bug in `test_save` (where an LF file is asserted against a CRLF reference fixture — see [Why test_save fails](#why-test_save-fails)).
+
+> [!NOTE]
+> **Windows Hosts vs. Other OSes & Our Rust Port (`73 / 75` vs. `74 / 75`)**:
+> When running the unmodified upstream `byroot/pysrt` tests natively on a **Windows host**, **2 tests fail (73 / 75 pass)**:
+> 1. `test_save` (due to CRLF vs LF line ending mismatch in the reference fixture).
+> 2. `test_empty_file` (`file = pysrt.open('/dev/null')`) because `/dev/null` does not exist on Windows filesystems (`FileNotFoundError`).
+> 
+> On Linux, macOS, and Docker, `/dev/null` is a valid OS device node, so `test_empty_file` passes (**74 / 75 pass**).
+> **In our Rust port (`pysrt-rs`)**, `test_empty_file` **passes on ALL platforms—including Windows**—because our Rust file layer transparently handles `/dev/null` path translation on Windows, meaning **74 / 75 tests pass** even on a Windows host!
 
 ```bash
 docker run --rm pysrt-rs pytest --original -v
@@ -114,8 +123,8 @@ pytest tests/original/test_srttime.py tests/original/test_srtitem.py tests/origi
 |---|---|---|---|
 | `test_srttime.py` | 21 / 21 | 0 | — |
 | `test_srtitem.py` | 18 / 18 | 0 | — |
-| `test_srtfile.py` | 35 / 36 | 1 | Pre-existing upstream fixture bug¹ |
-| **Total** | **74 / 75** | **1** | |
+| `test_srtfile.py` | 35 / 36 | 1 | Pre-existing upstream fixture bug¹ (2 fail on Windows hosts²) |
+| **Total** | **74 / 75** | **1** | **73 / 75 on Windows hosts for original pysrt²** |
 
 #### Why test_save fails <a id="why-test_save-fails"></a>
 
@@ -132,8 +141,16 @@ The static fixture `utf-8.srt` in the upstream repository was committed with Win
 **The exact same test fails in the unmodified `byroot/pysrt` Python repository under Python 3.**
 In accordance with Port Mortem rules, no test files or fixtures were edited; file hashes are verified in [`.port-mortem.toml`](./.port-mortem.toml).
 
-> **Note on `TestIntegration::test_empty_file` (`/dev/null`) on Windows Hosts**:
-> When running the unmodified upstream test suite (`tests/original/`) natively on a **Windows host**, the original pure-Python `byroot/pysrt` repository exhibits **2 test failures (73 / 75 pass)** because `test_empty_file` attempts to open `/dev/null` (`file = pysrt.open('/dev/null')`). On Windows, `/dev/null` does not exist (`FileNotFoundError: [Errno 2] No such file or directory: '/dev/null'`), whereas on Linux/Docker it is a valid device node (74 / 75 pass). In contrast, our Rust port (`pysrt-rs`) transparently handles `/dev/null` path translation on Windows, allowing `test_empty_file` to **pass even on a Windows host** (74 / 75 pass).
+#### Why test_empty_file fails in original pysrt on Windows hosts (but passes in our Rust port) <a id="why-test-empty-file-fails"></a>
+
+² **Why `TestIntegration::test_empty_file` (`/dev/null`) fails in original `byroot/pysrt` on Windows hosts, but passes in our Rust port and on Linux/macOS:**
+When running the unmodified upstream test suite (`tests/original/`) natively on a **Windows host**, the original pure-Python `byroot/pysrt` repository exhibits **2 test failures (73 / 75 pass)** because `test_empty_file` attempts to open `/dev/null`:
+```python
+file = pysrt.open('/dev/null', error_handling=SubRipFile.ERROR_RAISE)
+```
+- **Why it fails in original `byroot/pysrt` on Windows**: On Windows filesystems, `/dev/null` does not exist, raising `FileNotFoundError: [Errno 2] No such file or directory: '/dev/null'`. Therefore, only **73 / 75 tests pass** when running `byroot/pysrt` natively on Windows.
+- **Why it passes on Linux/macOS (and Docker)**: On UNIX-like operating systems, `/dev/null` is a standard kernel device node, so opening `/dev/null` succeeds (**74 / 75 tests pass**).
+- **Why it passes in our Rust port (`pysrt-rs`) on ALL platforms (including Windows)**: Our Rust file opening layer (`SubRipFile::open`) transparently handles `/dev/null` path translation on Windows, allowing `test_empty_file` to succeed on any host OS. Therefore, **74 / 75 unmodified tests pass in `pysrt-rs` even on Windows!**
 
 ### Complete Corrected Python Suite (`tests/fixed/`)
 
