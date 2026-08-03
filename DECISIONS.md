@@ -54,14 +54,15 @@ This log documents every non-trivial architectural divergence between the origin
 - **Rust (`pysrt-rs`)**: Implements `PartialEq`, `Eq`, `PartialOrd`, and `Ord` traits directly on `SubRipTime` and `SubRipItem`.
 - **Rationale**: Leverages Rust's zero-cost trait system for native sorting and hashing.
 
-### 11. Single-Pass Agentic Generation Provenance & In-Window Verification
-- **Hackathon Policy Compliance**: Per hackathon rules, AI/agent code generation is allowed, and a single finalized commit produced in one pass is acceptable provided there is verifiable in-window provenance (with timestamps after kickoff) rather than artificial incremental commit history.
+### 11. Core Single-Pass Agentic Generation Provenance & Iterative Enhancements
+- **Hackathon Policy Compliance**: Per hackathon rules, AI/agent code generation is allowed. While the vast majority of the core project (`SubRipTime`, `SubRipItem`, `SubRipFile`, PyO3 bindings, zero-unsafe memory design, and initial CLI commands `shift` / `rate`) was generated in a single comprehensive pass (`4eaeda0`) after kickoff, we subsequently iterated in-window to add missing CLI subcommands, CI workflows, and documentation.
 - **Project Kickoff & Generation Timestamps**:
   - **Initial Repository Setup Commit**: `2026-08-01 20:40:47 +0530` (`04f1f19`) — created after hackathon kickoff.
   - **Agentic IDE (Antigravity) Session Start**: `2026-08-01 21:19:27 +0530` (`15:49:27 UTC`, Conversation ID: `e98e5f0d-eaff-453b-8396-5216a4c335af`).
-  - **Full Track D Port Implementation Commit**: `2026-08-01 21:31:55 +0530` (`4eaeda0`) — generated in a single comprehensive pass by Antigravity in under 12 minutes in-window.
+  - **Core Track D Port Implementation Commit**: `2026-08-01 21:31:55 +0530` (`4eaeda0`) — the core library, PyO3 bindings, and initial CLI (`shift`, `rate`) were generated in a single comprehensive pass by Antigravity in under 12 minutes in-window.
+  - **Subsequent In-Window Enhancements**: Later commits added the remaining two CLI subcommands for full CLI parity (`5e725a6` for `srt split` and `ce19f05` for `srt break`), multi-stage Docker containerization (`bc9f52d`), CI workflow stabilization across Linux/macOS/Windows, and expanded 70,000-case differential fuzzing (`204ef35`).
 - **Verifiable Provenance Log**:
   - The complete, timestamped JSON-Lines agent conversation transcript recording every prompt, tool execution, and code generation step is preserved in this repository under:
     [`provenance/e98e5f0d_porting_transcript.jsonl`](file:///c:/Users/aksha/OneDrive/Documents/PYSRT_PORT/pysrt-rs/provenance/e98e5f0d_porting_transcript.jsonl)
-  - This log demonstrates that all Rust porting, zero-unsafe memory design, CLI implementation, and PyO3 bindings were generated in-window after kickoff without pre-kickoff work or invented commit history.
+  - This log demonstrates that the core Rust porting, zero-unsafe memory design, CLI implementation, and PyO3 bindings were generated in-window after kickoff without pre-kickoff work or invented commit history.
 
