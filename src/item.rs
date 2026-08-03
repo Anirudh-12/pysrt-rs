@@ -1,7 +1,27 @@
+use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::fmt;
 use crate::error::{Result, SrtError};
 use crate::time::SubRipTime;
+
+#[inline]
+pub fn strip_tags(text: &str) -> Cow<'_, str> {
+    if !text.contains('<') {
+        return Cow::Borrowed(text);
+    }
+    let mut result = String::with_capacity(text.len());
+    let mut in_tag = false;
+    for c in text.chars() {
+        if c == '<' {
+            in_tag = true;
+        } else if c == '>' && in_tag {
+            in_tag = false;
+        } else if !in_tag {
+            result.push(c);
+        }
+    }
+    Cow::Owned(result)
+}
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum ItemIndex {
@@ -65,19 +85,8 @@ impl SubRipItem {
         SubRipTime::from_ordinal(self.end.ordinal - self.start.ordinal)
     }
 
-    pub fn text_without_tags(&self) -> String {
-        let mut result = String::with_capacity(self.text.len());
-        let mut in_tag = false;
-        for c in self.text.chars() {
-            if c == '<' {
-                in_tag = true;
-            } else if c == '>' && in_tag {
-                in_tag = false;
-            } else if !in_tag {
-                result.push(c);
-            }
-        }
-        result
+    pub fn text_without_tags(&self) -> Cow<'_, str> {
+        strip_tags(&self.text)
     }
 
     pub fn characters_per_second(&self) -> f64 {
@@ -130,11 +139,14 @@ impl SubRipItem {
             return Err(SrtError::InvalidItem("Missing timestamp line".into()));
         }
         let (start, end, position) = Self::split_timestamps(lines[0].trim_end())?;
-        let text = lines[1..]
-            .iter()
-            .map(|l| l.trim_end())
-            .collect::<Vec<_>>()
-            .join("\n");
+        let total_len: usize = lines[1..].iter().map(|l| l.trim_end().len() + 1).sum();
+        let mut text = String::with_capacity(total_len.saturating_sub(1));
+        for (i, line) in lines[1..].iter().enumerate() {
+            if i > 0 {
+                text.push('\n');
+            }
+            text.push_str(line.trim_end());
+        }
         Ok(Self {
             index,
             start,
@@ -164,8 +176,12 @@ impl SubRipItem {
 
 impl Ord for SubRipItem {
     fn cmp(&self, other: &Self) -> Ordering {
-        (self.start, self.end, &self.index, &self.text, &self.position)
-            .cmp(&(other.start, other.end, &other.index, &other.text, &other.position))
+        self.start
+            .cmp(&other.start)
+            .then_with(|| self.end.cmp(&other.end))
+            .then_with(|| self.index.cmp(&other.index))
+            .then_with(|| self.text.cmp(&other.text))
+            .then_with(|| self.position.cmp(&other.position))
     }
 }
 

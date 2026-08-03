@@ -338,16 +338,12 @@ docker run --rm pysrt-rs python bench/run_bench.py
 python bench/run_bench.py
 ```
 
-The bench script parses `tests/static/utf-8.srt` (1,332 items) **1,000 times** each for
-both the Rust extension and pure Python pysrt, reporting:
+The bench script measures parsing (**1,000 iterations** each) and shifting/serialization (**2,000 iterations** each) for both the Rust extension and pure Python `pysrt` after warmup rounds, reporting:
 
-- **Throughput** (items/sec) — median of 5 rounds
-- **p99 latency** per parse call
-- **RSS memory** at peak (via `tracemalloc`)
-- **Speedup ratio** (Rust / Python)
+- **Average Duration** per operation (in milliseconds or microseconds)
+- **Speedup Ratio** (Rust / Python)
 
-Results are written to stdout and include Python version, platform, and Rust build profile
-so confounders are fully documented.
+Results are written to stdout and include Python version, platform, and Rust build profile so confounders are fully documented.
 
 ### Latest Release Build Results (`python bench/run_bench.py`)
 
@@ -355,10 +351,10 @@ so confounders are fully documented.
 ====================================================================
 Operation              | Python (pysrt)  | Rust (pysrt-rs) | Speedup   
 --------------------------------------------------------------------
-Parse (1000 subs)      |       6.58 ms |       0.30 ms |    22.0x
-Parse (Movie - 1332)   |       9.05 ms |       0.50 ms |    18.0x
-Shift (1000 subs)      |       2.11 ms |       0.44 ms |     4.8x
-Serialize (text)       |       0.15 ms |       0.04 ms |     3.4x
+Parse (1000 subs)      |       5.69 ms |       0.29 ms |    19.8x
+Parse (Movie - 1332)   |       8.29 ms |       0.44 ms |    19.0x
+Shift (1000 subs)      |       1.88 ms |       3.89 µs |   482.7x
+Serialize (text)       |       0.11 ms |      23.78 µs |     4.6x
 ====================================================================
 ```
 

@@ -13,6 +13,20 @@ pub enum ErrorHandling {
     Raise = 2,
 }
 
+impl ErrorHandling {
+    #[inline]
+    fn handle(&self, e: SrtError) -> Result<()> {
+        match self {
+            ErrorHandling::Raise => Err(e),
+            ErrorHandling::Log => {
+                eprintln!("Warning: Skipping invalid item: {}", e);
+                Ok(())
+            }
+            ErrorHandling::Pass => Ok(()),
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct SubRipFile {
     pub items: Vec<SubRipItem>,
@@ -42,13 +56,13 @@ impl SubRipFile {
         }
     }
 
-    pub fn guess_eol(source: &str) -> String {
+    pub fn guess_eol(source: &str) -> &'static str {
         if source.contains("\r\n") {
-            "\r\n".to_string()
+            "\r\n"
         } else if source.contains('\r') && !source.contains('\n') {
-            "\r".to_string()
+            "\r"
         } else {
-            "\n".to_string()
+            "\n"
         }
     }
 
@@ -60,14 +74,14 @@ impl SubRipFile {
         source: &str,
         error_handling: ErrorHandling,
     ) -> Result<Self> {
-        let eol = Self::guess_eol(source);
+        let eol = Self::guess_eol(source).to_string();
         let items = Self::parse_str(source, error_handling)?;
         Ok(Self::new(items, Some(eol), None, None))
     }
 
     pub fn parse_str(source: &str, error_handling: ErrorHandling) -> Result<Vec<SubRipItem>> {
-        let mut items = Vec::new();
-        let mut buffer = Vec::new();
+        let mut items = Vec::with_capacity(source.len() / 120);
+        let mut buffer = Vec::with_capacity(8);
 
         for line in source.lines() {
             if !line.trim().is_empty() {
@@ -75,13 +89,7 @@ impl SubRipFile {
             } else if !buffer.is_empty() {
                 match SubRipItem::from_lines(&buffer) {
                     Ok(item) => items.push(item),
-                    Err(e) => match error_handling {
-                        ErrorHandling::Raise => return Err(e),
-                        ErrorHandling::Log => {
-                            eprintln!("Warning: Skipping invalid item: {}", e);
-                        }
-                        ErrorHandling::Pass => {}
-                    },
+                    Err(e) => error_handling.handle(e)?,
                 }
                 buffer.clear();
             }
@@ -90,13 +98,7 @@ impl SubRipFile {
         if !buffer.is_empty() {
             match SubRipItem::from_lines(&buffer) {
                 Ok(item) => items.push(item),
-                Err(e) => match error_handling {
-                    ErrorHandling::Raise => return Err(e),
-                    ErrorHandling::Log => {
-                        eprintln!("Warning: Skipping invalid item: {}", e);
-                    }
-                    ErrorHandling::Pass => {}
-                },
+                Err(e) => error_handling.handle(e)?,
             }
         }
 
@@ -211,38 +213,44 @@ impl SubRipFile {
     }
 
     pub fn text(&self) -> String {
-        let mut buf = String::new();
+        let mut buf = String::with_capacity(self.items.len() * 128);
         for item in &self.items {
-            let mut block = item.to_string();
-            if !block.ends_with("\n\n") {
-                block.push('\n');
+            if self.eol == "\n" {
+                use std::fmt::Write;
+                let _ = write!(buf, "{}\n", item);
+            } else {
+                let mut block = item.to_string();
+                if !block.ends_with("\n\n") {
+                    block.push('\n');
+                }
+                buf.push_str(&block.replace('\n', &self.eol));
             }
-            if self.eol != "\n" {
-                block = block.replace('\n', &self.eol);
-            }
-            buf.push_str(&block);
         }
         buf
     }
 
     pub fn subtitle_text(&self) -> String {
-        self.items
-            .iter()
-            .map(|i| i.text.as_str())
-            .collect::<Vec<_>>()
-            .join("\n")
+        let mut buf = String::with_capacity(self.items.len() * 64);
+        for (i, item) in self.items.iter().enumerate() {
+            if i > 0 {
+                buf.push('\n');
+            }
+            buf.push_str(&item.text);
+        }
+        buf
     }
 
     pub fn write_into<W: Write>(&self, writer: &mut W) -> Result<()> {
         for item in &self.items {
-            let mut block = item.to_string();
-            if !block.ends_with("\n\n") {
-                block.push('\n');
+            if self.eol == "\n" {
+                write!(writer, "{}\n", item)?;
+            } else {
+                let mut block = item.to_string();
+                if !block.ends_with("\n\n") {
+                    block.push('\n');
+                }
+                write!(writer, "{}", block.replace('\n', &self.eol))?;
             }
-            if self.eol != "\n" {
-                block = block.replace('\n', &self.eol);
-            }
-            write!(writer, "{}", block)?;
         }
         Ok(())
     }

@@ -3,9 +3,10 @@ use pyo3::exceptions::{PyAttributeError, PyIndexError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySlice, PyString, PyTuple, PyType};
 
+use std::borrow::Cow;
 use crate::error::SrtError;
 use crate::file::{ErrorHandling, SubRipFile as RustSubRipFile};
-use crate::item::{ItemIndex, SubRipItem as RustSubRipItem};
+use crate::item::{strip_tags, ItemIndex, SubRipItem as RustSubRipItem};
 use crate::time::SubRipTime as RustSubRipTime;
 
 create_exception!(libsrt, Error, pyo3::exceptions::PyException);
@@ -82,6 +83,51 @@ fn coerce_time(other: &Bound<'_, PyAny>) -> PyResult<Py<PySubRipTime>> {
         return Py::new(py, PySubRipTime::new(h, m, s, ms));
     }
     Err(PyTypeError::new_err("Cannot coerce to SubRipTime"))
+}
+
+fn parse_shift_params(
+    args: &Bound<'_, PyTuple>,
+    kwargs: Option<&Bound<'_, PyDict>>,
+) -> PyResult<(i64, i64, i64, i64, Option<f64>)> {
+    let mut hours = 0;
+    let mut minutes = 0;
+    let mut seconds = 0;
+    let mut milliseconds = 0;
+    let mut ratio = None;
+
+    let len = args.len();
+    if len > 0 {
+        hours = args.get_item(0)?.extract()?;
+    }
+    if len > 1 {
+        minutes = args.get_item(1)?.extract()?;
+    }
+    if len > 2 {
+        seconds = args.get_item(2)?.extract()?;
+    }
+    if len > 3 {
+        milliseconds = args.get_item(3)?.extract()?;
+    }
+
+    if let Some(kw) = kwargs {
+        if let Some(h) = kw.get_item("hours")? {
+            hours = h.extract()?;
+        }
+        if let Some(m) = kw.get_item("minutes")? {
+            minutes = m.extract()?;
+        }
+        if let Some(s) = kw.get_item("seconds")? {
+            seconds = s.extract()?;
+        }
+        if let Some(ms) = kw.get_item("milliseconds")? {
+            milliseconds = ms.extract()?;
+        }
+        if let Some(r) = kw.get_item("ratio")? {
+            ratio = Some(r.extract()?);
+        }
+    }
+
+    Ok((hours, minutes, seconds, milliseconds, ratio))
 }
 
 #[pyclass(name = "_TimeDescriptor", module = "pysrt")]
@@ -302,44 +348,7 @@ impl PySubRipTime {
         args: &Bound<'_, PyTuple>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<()> {
-        let mut hours = 0;
-        let mut minutes = 0;
-        let mut seconds = 0;
-        let mut milliseconds = 0;
-        let mut ratio = None;
-
-        let len = args.len();
-        if len > 0 {
-            hours = args.get_item(0)?.extract()?;
-        }
-        if len > 1 {
-            minutes = args.get_item(1)?.extract()?;
-        }
-        if len > 2 {
-            seconds = args.get_item(2)?.extract()?;
-        }
-        if len > 3 {
-            milliseconds = args.get_item(3)?.extract()?;
-        }
-
-        if let Some(kw) = kwargs {
-            if let Some(h) = kw.get_item("hours")? {
-                hours = h.extract()?;
-            }
-            if let Some(m) = kw.get_item("minutes")? {
-                minutes = m.extract()?;
-            }
-            if let Some(s) = kw.get_item("seconds")? {
-                seconds = s.extract()?;
-            }
-            if let Some(ms) = kw.get_item("milliseconds")? {
-                milliseconds = ms.extract()?;
-            }
-            if let Some(r) = kw.get_item("ratio")? {
-                ratio = Some(r.extract()?);
-            }
-        }
-
+        let (hours, minutes, seconds, milliseconds, ratio) = parse_shift_params(args, kwargs)?;
         self.inner.shift(hours, minutes, seconds, milliseconds, ratio);
         Ok(())
     }
@@ -509,15 +518,21 @@ impl PySubRipItem {
     }
 
     #[getter]
-    fn text_without_tags(&self, py: Python<'_>) -> String {
-        let rust_item = self.to_rust_item(py);
-        rust_item.text_without_tags()
+    fn text_without_tags(&self) -> Cow<'_, str> {
+        strip_tags(&self.text)
     }
 
     #[getter]
     fn characters_per_second(&self, py: Python<'_>) -> f64 {
-        let rust_item = self.to_rust_item(py);
-        rust_item.characters_per_second()
+        let s = self.start.borrow(py).inner;
+        let e = self.end.borrow(py).inner;
+        let duration_secs = (e.ordinal - s.ordinal) as f64 / 1000.0;
+        if duration_secs == 0.0 {
+            return 0.0;
+        }
+        let text = strip_tags(&self.text);
+        let char_count = text.chars().filter(|c| *c != '\n' && *c != '\r').count();
+        char_count as f64 / duration_secs
     }
 
     fn __str__(&self, py: Python<'_>) -> String {
@@ -587,8 +602,9 @@ impl PySubRipItem {
         args: &Bound<'_, PyTuple>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<()> {
-        self.start.borrow_mut(py).shift(args, kwargs)?;
-        self.end.borrow_mut(py).shift(args, kwargs)?;
+        let (hours, minutes, seconds, milliseconds, ratio) = parse_shift_params(args, kwargs)?;
+        self.start.borrow_mut(py).inner.shift(hours, minutes, seconds, milliseconds, ratio);
+        self.end.borrow_mut(py).inner.shift(hours, minutes, seconds, milliseconds, ratio);
         Ok(())
     }
 
@@ -848,9 +864,11 @@ impl PySubRipFile {
         args: &Bound<'_, PyTuple>,
         kwargs: Option<&Bound<'_, PyDict>>,
     ) -> PyResult<()> {
+        let (hours, minutes, seconds, milliseconds, ratio) = parse_shift_params(args, kwargs)?;
         for item in &self.items {
-            let mut item_mut = item.borrow_mut(py);
-            item_mut.shift(py, args, kwargs)?;
+            let item_mut = item.borrow_mut(py);
+            item_mut.start.borrow_mut(py).inner.shift(hours, minutes, seconds, milliseconds, ratio);
+            item_mut.end.borrow_mut(py).inner.shift(hours, minutes, seconds, milliseconds, ratio);
         }
         Ok(())
     }
@@ -1065,7 +1083,7 @@ impl PySubRipFile {
         file_obj.call_method0("close")?;
 
         // Detect EOL from decoded content
-        let eol = RustSubRipFile::guess_eol(&content);
+        let eol = RustSubRipFile::guess_eol(&content).to_string();
 
         let err_mode = match _error_handling {
             0 => ErrorHandling::Pass,

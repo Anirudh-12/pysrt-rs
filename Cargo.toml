@@ -36,3 +36,9 @@ pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
 [features]
 default = []
 python = ["dep:pyo3"]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
