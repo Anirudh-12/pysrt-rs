@@ -10,7 +10,7 @@ authors = [{name = "K.Anirudh Reddy", email = "anirudhreddykallem2008@gmail.com"
 requires-python = ">=3.8"
 
 [tool.maturin]
-features = ["python"]
+features = ["python", "extension-module"]
 module-name = "libsrt"
 
 [tool.pytest.ini_options]

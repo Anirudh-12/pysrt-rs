@@ -42,14 +42,14 @@ jobs:
         continue-on-error: true
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --features python -- -D warnings
         continue-on-error: true
 
       - name: Build Rust crate
-        run: cargo build --all-targets --all-features --verbose
+        run: cargo build --all-targets --features python --verbose
 
       - name: Run Rust unit tests
-        run: cargo test --all-targets --all-features --verbose
+        run: cargo test --all-targets --features python --verbose
 
   maturin:
     name: Maturin Dev (${{ matrix.os }} / Python ${{ matrix.python-version }})
