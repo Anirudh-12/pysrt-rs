@@ -66,7 +66,7 @@ python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # 3 — Build the Python extension ('libsrt') and run tests
-maturin develop --features python --release
+maturin develop --release
 
 # Run corrected suite (75 / 75 pass)
 pytest -v

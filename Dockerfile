@@ -59,7 +59,7 @@ RUN cargo build --release
 RUN cargo test --all-targets
 
 # ── 1c: Build Python wheel via maturin for Python 3.12 ───────────────────────
-RUN maturin build --features python --release --out /wheels -i 3.12
+RUN maturin build --release --out /wheels -i 3.12
 
 
 # ── Stage 2: runtime ────────────────────────────────────────────────────────
