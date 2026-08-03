@@ -1,0 +1,122 @@
+{
+  "metadata": {
+    "timestamp": "2026-08-03T12:17:09Z",
+    "python_version": "3.12.9",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+    "track": "D (Python -> Rust)"
+  },
+  "latency_benchmarks": [
+    {
+      "operation": "Parse (1000 subs)",
+      "python": {
+        "name": "Py Parse (1,000 subs)",
+        "iterations": 1000,
+        "mean_seconds": 0.006809627799994359,
+        "p50_seconds": 0.006741799999872455,
+        "p95_seconds": 0.007408700000269164,
+        "p99_seconds": 0.008054299999912473,
+        "max_seconds": 0.009311099999649741
+      },
+      "rust": {
+        "name": "Rust Parse (1,000 subs)",
+        "iterations": 1000,
+        "mean_seconds": 0.00030906829999685214,
+        "p50_seconds": 0.00029839999979230925,
+        "p95_seconds": 0.0003677999998217274,
+        "p99_seconds": 0.0004422000001795823,
+        "max_seconds": 0.0005949000001237437
+      },
+      "speedup_mean": 22.03,
+      "speedup_p95": 20.14,
+      "speedup_p99": 18.21
+    },
+    {
+      "operation": "Parse (Movie 1332)",
+      "python": {
+        "name": "Py Parse (Movie 1,332)",
+        "iterations": 1000,
+        "mean_seconds": 0.0097597783000042,
+        "p50_seconds": 0.009649300000091898,
+        "p95_seconds": 0.010620900000049005,
+        "p99_seconds": 0.011818799999673502,
+        "max_seconds": 0.015103900000212889
+      },
+      "rust": {
+        "name": "Rust Parse (Movie 1,332)",
+        "iterations": 1000,
+        "mean_seconds": 0.0004989670999998452,
+        "p50_seconds": 0.00047059999997145496,
+        "p95_seconds": 0.0006198000000949833,
+        "p99_seconds": 0.0007691999999224208,
+        "max_seconds": 0.0009976999999707914
+      },
+      "speedup_mean": 19.56,
+      "speedup_p95": 17.14,
+      "speedup_p99": 15.37
+    },
+    {
+      "operation": "Shift (1000 subs)",
+      "python": {
+        "name": "Py Shift (1,000 subs)",
+        "iterations": 2000,
+        "mean_seconds": 0.0022752146499992703,
+        "p50_seconds": 0.0022181999997883395,
+        "p95_seconds": 0.0026204999999208667,
+        "p99_seconds": 0.0032734999999775027,
+        "max_seconds": 0.006421600000066974
+      },
+      "rust": {
+        "name": "Rust Shift (1,000 subs)",
+        "iterations": 2000,
+        "mean_seconds": 0.0004369394000009379,
+        "p50_seconds": 0.0004195000001345761,
+        "p95_seconds": 0.0005400999998528278,
+        "p99_seconds": 0.0006741000001966313,
+        "max_seconds": 0.0009030999999595224
+      },
+      "speedup_mean": 5.21,
+      "speedup_p95": 4.85,
+      "speedup_p99": 4.86
+    },
+    {
+      "operation": "Serialize (text)",
+      "python": {
+        "name": "Py Serialize (text)",
+        "iterations": 2000,
+        "mean_seconds": 0.00014951510000332747,
+        "p50_seconds": 0.0001430000002073939,
+        "p95_seconds": 0.00018369999997958075,
+        "p99_seconds": 0.00022750000016458216,
+        "max_seconds": 0.000388800000109768
+      },
+      "rust": {
+        "name": "Rust Serialize (text)",
+        "iterations": 2000,
+        "mean_seconds": 4.432669999710015e-05,
+        "p50_seconds": 4.2499999835854396e-05,
+        "p95_seconds": 5.539999983739108e-05,
+        "p99_seconds": 8.089999982985319e-05,
+        "max_seconds": 0.0002488000000084867
+      },
+      "speedup_mean": 3.37,
+      "speedup_p95": 3.32,
+      "speedup_p99": 2.81
+    }
+  ],
+  "startup_ms": {
+    "python_import_ms": 54.31,
+    "rust_extension_import_ms": 36.39,
+    "rust_native_cli_ms": 5.29,
+    "import_speedup": 1.49
+  },
+  "memory_footprint_mb": {
+    "dataset_copies": 30,
+    "python_heap_peak_mb": 12.39,
+    "rust_heap_peak_mb": 5.04,
+    "heap_reduction_factor": 2.46,
+    "python_rss_delta_mb": 0.0,
+    "rust_rss_delta_mb": 0.0,
+    "rss_reduction_factor": 1.0
+  }
+}

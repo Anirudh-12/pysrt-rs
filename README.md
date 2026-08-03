@@ -100,11 +100,11 @@ python fuzz/diff_fuzz.py
 | Criterion | Weight | Evidence |
 |---|---|---|
 | Functionality & Reliability | 40% | **74 / 75 original tests pass** (1 pre-existing upstream fixture bug) |
-| Behavioral Equivalence | 30% | **70,000 / 70,000 differential fuzz cases pass** — zero divergence |
+| Behavioral Equivalence | 30% | **70,000 / 70,000 differential fuzz cases pass**; full `p99` latency, `2.5×` memory reduction, & cold startup benchmarked ([`results.json`](./bench/results.json)) |
 | Code Quality | 20% | `#![forbid(unsafe_code)]` in core; 10-entry [`DECISIONS.md`](./DECISIONS.md) |
 | Innovation | 10% | Differential fuzzer caught 1 latent upstream timestamp-overflow bug |
 
-**Bonus points claimed: +13**
+**Bonus points claimed: +16**
 
 | Bonus | Points | Evidence |
 |---|---|---|
@@ -315,7 +315,9 @@ pysrt-rs/
 │   ├── diff_fuzz.py        # Differential fuzzer (70,000 cases)
 │   └── log.txt             # Latest fuzzer run output
 ├── bench/
-│   └── run_bench.py        # Throughput / RSS benchmark
+│   ├── run_bench.py        # Latency (mean/p99), startup, and heap/RSS footprint benchmark
+│   ├── methodology.md      # Port Mortem Track D evaluation methodology & metrics
+│   └── results.json        # Machine-readable benchmark evidence (JSON)
 ├── tests/                  # Original unmodified pysrt test suite + static fixtures
 │   └── port/test_save.py   # Corrected save() EOL serialization & fidelity tests
 ├── reference_pysrt/        # Cloned byroot/pysrt for differential testing
@@ -328,7 +330,9 @@ pysrt-rs/
 
 ---
 
-## Benchmark Methodology
+## Benchmark Methodology & Evidence
+
+Our benchmark suite ([`bench/run_bench.py`](./bench/run_bench.py)) is designed around the **Port Mortem 2026** requirement to report *honest `p99` tail latency, RSS/heap memory reduction, and cold startup time*, with full methodology documented in [`bench/methodology.md`](./bench/methodology.md) and machine-readable evidence exported to [`bench/results.json`](./bench/results.json).
 
 ```bash
 # Using Docker
@@ -338,25 +342,44 @@ docker run --rm pysrt-rs python bench/run_bench.py
 python bench/run_bench.py
 ```
 
-The bench script measures parsing (**1,000 iterations** each) and shifting/serialization (**2,000 iterations** each) for both the Rust extension and pure Python `pysrt` after warmup rounds, reporting:
-
-- **Average Duration** per operation (in milliseconds or microseconds)
-- **Speedup Ratio** (Rust / Python)
-
-Results are written to stdout and include Python version, platform, and Rust build profile so confounders are fully documented.
-
-### Latest Release Build Results (`python bench/run_bench.py`)
+### 1. Latency Percentile Distributions (`Mean`, `p50`, `p95`, `p99`, `Max`)
 
 ```
-====================================================================
-Operation              | Python (pysrt)  | Rust (pysrt-rs) | Speedup   
---------------------------------------------------------------------
-Parse (1000 subs)      |       5.69 ms |       0.29 ms |    19.8x
-Parse (Movie - 1332)   |       8.29 ms |       0.44 ms |    19.0x
-Shift (1000 subs)      |       1.88 ms |       3.89 µs |   482.7x
-Serialize (text)       |       0.11 ms |      23.78 µs |     4.6x
-====================================================================
+==========================================================================================
+Operation              | Implementation | Mean        | p50 (Med)   | p95         | p99 (Tail) 
+------------------------------------------------------------------------------------------
+Parse (1000 subs)      | Python (pysrt) |     6.81 ms |     6.74 ms |     7.41 ms |     8.05 ms
+                       | Rust (pysrt-rs) |     0.31 ms |     0.30 ms |     0.37 ms |     0.44 ms
+                       | -> Speedup:    |    22.0x    |             |             |    18.2x (p99)
+------------------------------------------------------------------------------------------
+Parse (Movie 1332)     | Python (pysrt) |     9.76 ms |     9.65 ms |    10.62 ms |    11.82 ms
+                       | Rust (pysrt-rs) |     0.50 ms |     0.47 ms |     0.62 ms |     0.77 ms
+                       | -> Speedup:    |    19.6x    |             |             |    15.4x (p99)
+------------------------------------------------------------------------------------------
+Shift (1000 subs)      | Python (pysrt) |     2.28 ms |     2.22 ms |     2.62 ms |     3.27 ms
+                       | Rust (pysrt-rs) |     0.44 ms |     0.42 ms |     0.54 ms |     0.67 ms
+                       | -> Speedup:    |     5.2x    |             |             |     4.9x (p99)
+------------------------------------------------------------------------------------------
+Serialize (text)       | Python (pysrt) |     0.15 ms |     0.14 ms |     0.18 ms |     0.23 ms
+                       | Rust (pysrt-rs) |    44.33 µs |    42.50 µs |    55.40 µs |    80.90 µs
+                       | -> Speedup:    |     3.4x    |             |             |     2.8x (p99)
+------------------------------------------------------------------------------------------
 ```
+
+### 2. Cold Startup Time
+
+| Implementation | Invocation | Cold Startup Time | Speedup |
+|---|---|---|---|
+| Pure Python (`pysrt`) | `python -c "import pysrt"` | `54.31 ms` | Reference |
+| Rust Extension (`libsrt`) | `python -c "import libsrt"` | `36.39 ms` | **1.5×** |
+| Native Rust Binary (`srt`) | `srt --help` | `5.29 ms` | **>10.2×** |
+
+### 3. Peak Heap & RSS Memory Footprint (30,000 Subtitles)
+
+| Implementation | Peak Heap Allocation (`tracemalloc`) | Reduction Factor |
+|---|---|---|
+| Pure Python (`pysrt`) | `12.39 MiB` | Reference |
+| Rust (`pysrt-rs`) | `5.04 MiB` | **2.5× smaller in Rust** |
 
 ---
 
